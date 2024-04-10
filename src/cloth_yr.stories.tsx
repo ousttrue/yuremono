@@ -10,7 +10,7 @@ import { Cloth } from './cloth/cloth';
 import { vec3, mat4, vec4 } from 'gl-matrix';
 import { Stats } from '@react-three/drei'
 
-const GL = WebGL2RenderingContext;
+// const GL = WebGL2RenderingContext;
 
 
 interface InputState {
@@ -199,7 +199,7 @@ class State {
     // Todo : 毎フレームVBO/IBOを作り直すという、残念な実装になっています
     // : 動的書き換えに適したDYNAMIC_DRAW / bufferSubDataあたりに対応させるべき
     // : また、インターリーブ対応など、他にも最適化の余地があります
-    const geometry_cloth = this.gl.createGeometry(this.cloth._vertices, this.cloth._indeces, GL.LINES);
+    const geometry_cloth = this.gl.createGeometry(this.cloth._vertices, this.cloth._indeces, this.gl._gl.LINES);
 
     // 描画
     const wvp_matrix = mat4.create();
