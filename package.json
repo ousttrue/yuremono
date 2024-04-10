@@ -36,6 +36,8 @@
     "@react-three/drei": "^9.105.3",
     "@react-three/fiber": "^8.16.1",
     "@types/three": "^0.163.0",
+    "cannon-es": "^0.20.0",
+    "gl-matrix": "^3.4.3",
     "three": "^0.163.0",
     "typescript": "~5.4.4"
   },

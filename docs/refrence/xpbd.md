@@ -12,3 +12,7 @@
 - https://github.com/nobuo-nakagawa/xpbd
 - https://github.com/Q-Minh/position-based-dynamics
 - https://github.com/felipeek/raw-physics
+
+## bagylon
+
+- [Babylon.js WebGPU Cloth Simulation (2) - WebGPU プログラミング](https://onagat.hatenablog.com/entry/2023/02/16/114956)

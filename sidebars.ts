@@ -35,6 +35,8 @@ const sidebars: SidebarsConfig = {
       label: 'Cloth',
       items: [
         'cloth/index',
+        'cloth/cloth_yr',
+        'cloth/cloth_pbd',
       ],
     },
     {
@@ -43,6 +45,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'refrence/pbd',
         'refrence/xpbd',
+        'refrence/mass_spring_model',
       ]
     }
   ],
