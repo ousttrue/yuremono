@@ -5,48 +5,77 @@
 https://web.archive.org/web/20190515015027/http://rocketjump.skr.jp/unity3d/109/
 
 ```cs
-public void UpdateSpring()
+public class SpringBone : MonoBehaviour
 {
-	//回転をリセット
-	trs.localRotation = Quaternion.identity * localRotation;
+  //次のボーン
+  public Transform child;
 
-	float sqrDt = Time.deltaTime * Time.deltaTime;
+  //ボーンの向き
+  public Vector3 boneAxis = new Vector3(0.0f, 1.0f, 0.0f);
 
-	//stiffness
-	Vector3 force = trs.rotation * (boneAxis * stiffnessForce) / sqrDt;
+  public float radius = 0.5f;
 
-	//drag
-	force += (prevTipPos - currTipPos) * dragForce / sqrDt;
+  //バネが戻る力
+  public float stiffnessForce = 0.2f;
 
-	force += springForce / sqrDt;
+  //力の減衰力
+  public float dragForce = 0.1f;
 
-	//前フレームと値が同じにならないように
-	Vector3 temp = currTipPos;
+  public Vector3 springForce = new Vector3(0.0f, -0.05f, 0.0f);
 
-	//verlet
-	currTipPos = (currTipPos - prevTipPos) + currTipPos + (force * sqrDt); // 👈
+  public SpringCollider[] colliders;
 
-	//長さを元に戻す
-	currTipPos = ((currTipPos - trs.position).normalized * springLength) + trs.position;
+  public bool debug;
 
-	//衝突判定
-	for (int i = 0; i < colliders.Length; i++)
-	{
-		if (Vector3.Distance(currTipPos, colliders[i].transform.position) <= (radius + colliders[i].radius))
-		{
-			Vector3 normal = (currTipPos - colliders[i].transform.position).normalized;
-			currTipPos = colliders[i].transform.position + (normal * (radius + colliders[i].radius));
-			currTipPos = ((currTipPos - trs.position).normalized * springLength) + trs.position;
-		}
-	}
+  private float springLength;
+  private Quaternion localRotation;
+  private Transform trs;
+  private Vector3 currTipPos;
+  private Vector3 prevTipPos;
 
-	prevTipPos = temp;
+  public void UpdateSpring()
+  {
+    //回転をリセット
+    trs.localRotation = Quaternion.identity * localRotation;
 
-	//回転を適用；
-	Vector3 aimVector = trs.TransformDirection(boneAxis);
-	Quaternion aimRotation = Quaternion.FromToRotation(aimVector, currTipPos - trs.position);
-	trs.rotation = aimRotation * trs.rotation;
-}
+    float sqrDt = Time.deltaTime * Time.deltaTime;
+
+    //stiffness
+    Vector3 force = trs.rotation * (boneAxis * stiffnessForce) / sqrDt;
+
+    //drag
+    force += (prevTipPos - currTipPos) * dragForce / sqrDt;
+
+    //重力
+    force += springForce / sqrDt;
+
+    //前フレームと値が同じにならないように
+    Vector3 temp = currTipPos;
+
+    //verlet
+    currTipPos = (currTipPos - prevTipPos) + currTipPos + (force * sqrDt); // 👈
+
+    //長さを元に戻す
+    currTipPos = ((currTipPos - trs.position).normalized * springLength) + trs.position;
+
+    //衝突判定
+    for (int i = 0; i < colliders.Length; i++)
+    {
+      if (Vector3.Distance(currTipPos, colliders[i].transform.position) <= (radius + colliders[i].radius))
+      {
+        Vector3 normal = (currTipPos - colliders[i].transform.position).normalized;
+        currTipPos = colliders[i].transform.position + (normal * (radius + colliders[i].radius));
+        currTipPos = ((currTipPos - trs.position).normalized * springLength) + trs.position;
+      }
+    }
+
+    prevTipPos = temp;
+
+    //回転を適用；
+    Vector3 aimVector = trs.TransformDirection(boneAxis);
+    Quaternion aimRotation = Quaternion.FromToRotation(aimVector, currTipPos - trs.position);
+    trs.rotation = aimRotation * trs.rotation;
+  }
 ```
 
 :::
