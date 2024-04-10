@@ -17,16 +17,9 @@ const sidebars: SidebarsConfig = {
   // But you can create a sidebar manually
   sidebar: [
     'index',
-    {
-      type: 'category',
-      label: 'Algorithm',
-      link: { type: 'doc', id: 'algorithm/index' },
-      items: [
-        'algorithm/pbd',
-        'algorithm/xpbd',
-        'algorithm/constraint',
-      ],
-    },
+    'particle',
+    'verlet',
+    // springbone
     {
       type: 'category',
       label: 'SpringBone',
@@ -36,6 +29,7 @@ const sidebars: SidebarsConfig = {
         'springbone/vrmspringbone',
       ],
     },
+    // cloth
     {
       type: 'category',
       label: 'Cloth',
@@ -43,6 +37,14 @@ const sidebars: SidebarsConfig = {
         'cloth/index',
       ],
     },
+    {
+      type: 'category',
+      label: '参考',
+      items: [
+        'refrence/pbd',
+        'refrence/xpbd',
+      ]
+    }
   ],
 };
 

@@ -20,16 +20,10 @@ var nextTail = currentTail
 
 :::
 
-:::info MonoBehaviourの構成は違う
-
-作業場の理由で、初期は1ファイルになるようにしていた。
-
-:::
-
 :::tip 3つの実装がある
 
 - vrm-0.x
-- vrm-0.x-fastspringbone
-- vrm-1.0
+- vrm-0.x-fastspringbone(DOTS)
+- vrm-1.0(DOTS)
 
 :::
