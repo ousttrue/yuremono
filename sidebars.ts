@@ -35,8 +35,15 @@ const sidebars: SidebarsConfig = {
       label: 'Cloth',
       items: [
         'cloth/index',
-        'cloth/cloth_yr',
-        'cloth/cloth_pbd',
+        {
+          type: 'category',
+          label: '実装例',
+          link: { type: 'doc', id: 'cloth/impl/index' },
+          items: [
+            'cloth/impl/cloth_yr',
+            'cloth/impl/cloth_pbd',
+          ]
+        },
       ],
     },
     {

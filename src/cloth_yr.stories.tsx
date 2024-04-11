@@ -1,5 +1,4 @@
 import React from "react";
-import './cloth/common.css';
 import { Canvas, useFrame } from "@react-three/fiber";
 import { yrGL, yrGLRenderer, yrGLMaterial } from './cloth/lib/yrGL';
 import { vs_constant, fs_constant } from './cloth/lib/constant';
@@ -9,8 +8,7 @@ import { yrCamera } from './cloth/lib/yrCamera';
 import { Cloth } from './cloth/cloth';
 import { vec3, mat4, vec4 } from 'gl-matrix';
 import { Stats } from '@react-three/drei'
-
-// const GL = WebGL2RenderingContext;
+import { Pane } from "tweakpane";
 
 
 interface InputState {
@@ -47,43 +45,47 @@ class State {
   // -------------------------------------------------------------------------------------------
   // UI（ボタンやスライダーなど）用パラメータ
   reset = true; // リセット
-  div = 0; // 質点分割数
-  relaxation = 0; // 制約充足の反復回数
+  div = 10; // 質点分割数
+  relaxation = 1; // 制約充足の反復回数
   collision = false; // 球との衝突判定
 
-  constructor(_gl: WebGL2RenderingContext, element: HTMLElement) {
-    this.renderer = new yrGLRenderer(_gl);
-
-    // GL関係のインスタンスを生成
-    this.gl = new yrGL(_gl);
-    this.material_constant = this.gl.createMaterial(vs_constant, fs_constant); // マテリアル
-
-    // カメラ
-    this.camera = new yrCamera();
-    this.camera._pos[0] = 1.25;
-    this.camera._pos[1] = 0.0;
-    this.camera._pos[2] = 5.5;
-    this.camera._fov_y = 32.5 * Math.PI / 180.0; // 画角調整
-
-    this.input = new yrInput(element);
+  constructor() {
   }
 
-  onFrame(inputState: InputState) {
+  onFrame(_gl: WebGL2RenderingContext,
+    element: HTMLElement, inputState: InputState) {
+
+    if (!this.renderer) {
+      this.renderer = new yrGLRenderer(_gl);
+      // GL関係のインスタンスを生成
+      this.gl = new yrGL(_gl);
+      this.material_constant = this.gl.createMaterial(vs_constant, fs_constant); // マテリアル
+
+      // カメラ
+      this.camera = new yrCamera();
+      this.camera._pos[0] = 1.25;
+      this.camera._pos[1] = 0.0;
+      this.camera._pos[2] = 5.5;
+      this.camera._fov_y = 32.5 * Math.PI / 180.0; // 画角調整
+
+      this.input = new yrInput(element);
+    }
+
     // UI（ボタンやスライダーなど）の取得
-    for (let i = 0; i < document.form_ui.div.length; i++) {
-      if (document.form_ui.div[i].checked) {
-        const value = parseInt(document.form_ui.div[i].value);
-        if (this.div !== value) {
-          this.div = value;
-          this.reset = true;
-        }
-      }
-    }
-    for (let i = 0; i < document.form_ui.relaxation.length; i++) {
-      if (document.form_ui.relaxation[i].checked) {
-        this.relaxation = parseInt(document.form_ui.relaxation[i].value);
-      }
-    }
+    // for (let i = 0; i < document.form_ui.div.length; i++) {
+    //   if (document.form_ui.div[i].checked) {
+    //     const value = parseInt(document.form_ui.div[i].value);
+    //     if (this.div !== value) {
+    //       this.div = value;
+    //       this.reset = true;
+    //     }
+    //   }
+    // }
+    // for (let i = 0; i < document.form_ui.relaxation.length; i++) {
+    //   if (document.form_ui.relaxation[i].checked) {
+    //     this.relaxation = parseInt(document.form_ui.relaxation[i].value);
+    //   }
+    // }
 
     // this.g = parseFloat(document.form_ui.g.value);
     // this.w = parseFloat(document.form_ui.w.value);
@@ -95,7 +97,8 @@ class State {
     // this.shear_stretch = parseFloat(document.form_ui.shear_stretch.value);
     // this.bending_shrink = parseFloat(document.form_ui.bending_shrink.value);
     // this.bending_stretch = parseFloat(document.form_ui.bending_stretch.value);
-    this.collision = document.form_ui.collision.checked;
+    // this.collision = document.form_ui.collision.checked;
+
 
     // タイマー更新
     this.timer.update();
@@ -213,24 +216,25 @@ class State {
   }
 }
 
-function Render({ inputState }: { inputState: InputState }) {
-  const [state, setState] = React.useState<State>(null);
+function Render({ state, inputState }: { state: State, inputState: InputState }) {
   useFrame(({ gl, clock }, delta) => {
-    if (!state) {
-      // initialize;
-      setState(new State(gl.getContext() as WebGL2RenderingContext, gl.domElement));
-    }
-    else {
-      // render
-      state.onFrame(inputState);
-    }
+    state.onFrame(
+      gl.getContext() as WebGL2RenderingContext,
+      gl.domElement,
+      inputState);
   }, 1)
 
-  return <Stats />
+  return (<></>);
 }
 
+const PARAMS = {
+  factor: 123,
+  title: 'hello',
+  color: '#ff0055',
+};
+let pane: Pane;
 
-export function ClothSimulation() {
+export function ClothSimulation(props) {
   const [inputState, setInputState] = React.useState<InputState>({
     g: 7.0, // 重力
     w: 7.5, // 風力
@@ -244,148 +248,27 @@ export function ClothSimulation() {
     bending_stretch: 0.5, // 制約バネの特性（曲げバネの縮み抵抗）
   });
 
-  return (<div id="main">
-    <h1>Cloth Simulation</h1>
-    <a href="https://qiita.com/yunta_robo/items/0b468b65f3412554400a"
-    >Qiita投稿</a
-    >
-    <div style={{ width: "512px", height: "512px" }} >
-      <Canvas >
-        <Render inputState={inputState} />
-      </Canvas>
+  const [state, setState] = React.useState<State>(null);
+
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    pane = new Pane({
+      container: ref.current,
+      title: "Parameters",
+    });
+    pane.addBinding(PARAMS, 'factor');
+    pane.addBinding(PARAMS, 'title');
+    pane.addBinding(PARAMS, 'color');
+    // pane.addBinding(cube, "position");
+    setState(new State());
+  }, []);
+
+  return (<>
+    <Canvas style={{ ...props }}>
+      <Render state={state} inputState={inputState} />
+    </Canvas>
+    <div ref={ref} >
     </div>
-    <form name="form_ui" style={{ fontSize: "14px" }}>
-      左ドラッグまたはスワイプ操作でカメラを回転させることができます。
-      <br />
-      <br />
-      <input type="button" value="リセット" onClick={() => { }} />
-      <br />
-      <br />
-      ■質点分割数（低負荷→高負荷）
-      <br />
-      <input type="radio" name="div" value="15" />15
-      <input type="radio" name="div" value="31" defaultChecked />31
-      <br />
-      ■制約充足の反復回数（低負荷→高負荷）
-      <br />
-      <input type="radio" name="relaxation" value="1" />1
-      <input type="radio" name="relaxation" value="2" defaultChecked />2
-      <input type="radio" name="relaxation" value="3" />3
-      <input type="radio" name="relaxation" value="4" />4
-      <input type="radio" name="relaxation" value="5" />5
-      <input type="radio" name="relaxation" value="6" />6
-      <br />
-      ■重力（弱→強）
-      <br />
-      <input
-        type="range"
-        name="g"
-        min="0.0"
-        max="9.8"
-        step="0.1"
-        value={inputState.g}
-        onChange={e => setInputState({ ...inputState, g: parseFloat(e.target.value) })}
-      />
-      <br />
-      ■風力（弱→強）
-      <br />
-      <input
-        type="range"
-        name="w"
-        min="0.0"
-        max="20.0"
-        step="0.1"
-        value={inputState.w}
-        onChange={e => setInputState({ ...inputState, w: parseFloat(e.target.value) })}
-      />
-      <br />
-      ■抵抗（弱→強）
-      <br />
-      <input
-        type="range"
-        name="r"
-        min="0.0"
-        max="2.0"
-        step="0.01"
-        value={inputState.r}
-        onChange={e => setInputState({ ...inputState, r: parseFloat(e.target.value) })}
-      />
-      <br />
-      ■制約バネの特性
-      <br />
-      <input
-        type="range"
-        name="k"
-        min="0.0"
-        max="5000.0"
-        step="10.0"
-        value={inputState.k}
-        onChange={e => setInputState({ ...inputState, k: parseFloat(e.target.value) })}
-      />　基本強度（弱→強）
-      <br />
-      <input
-        type="range"
-        name="structural_shrink"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={inputState.structural_shrink}
-        onChange={e => setInputState({ ...inputState, structural_shrink: parseFloat(e.target.value) })}
-      />　構成バネの伸び抵抗（弱→強）
-      <br />
-      <input
-        type="range"
-        name="structural_stretch"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={inputState.structural_stretch}
-        onChange={e => setInputState({ ...inputState, structural_stretch: parseFloat(e.target.value) })}
-      />　構成バネの縮み抵抗（弱→強）
-      <br />
-      <input
-        type="range"
-        name="shear_shrink"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={inputState.shear_shrink}
-        onChange={e => setInputState({ ...inputState, shear_shrink: parseFloat(e.target.value) })}
-      />　せん断バネの伸び抵抗（弱→強）
-      <br />
-      <input
-        type="range"
-        name="shear_stretch"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={inputState.shear_stretch}
-        onChange={e => setInputState({ ...inputState, shear_stretch: parseFloat(e.target.value) })}
-      />　せん断バネの縮み抵抗（弱→強）
-      <br />
-      <input
-        type="range"
-        name="bending_shrink"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={inputState.bending_shrink}
-        onChange={e => setInputState({ ...inputState, bending_shrink: parseFloat(e.target.value) })}
-      />　曲げバネの伸び抵抗（弱→強）
-      <br />
-      <input
-        type="range"
-        name="bending_stretch"
-        min="0.0"
-        max="1.0"
-        step="0.01"
-        value={inputState.bending_stretch}
-        onChange={e => setInputState({ ...inputState, bending_stretch: parseFloat(e.target.value) })}
-      />　曲げバネの縮み抵抗（弱→強）
-      <br />
-      ■球との衝突判定
-      <br />
-      <input type="checkbox" name="collision" value="0" defaultChecked />
-    </form>
-  </div >);
+  </>);
 }

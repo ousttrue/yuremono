@@ -16,29 +16,30 @@
     "ladle:dev": "ladle serve",
     "ladle:build": "ladle build"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@docusaurus/core": "3.2.1",
     "@docusaurus/module-type-aliases": "3.2.1",
+    "@docusaurus/preset-classic": "3.2.1",
     "@docusaurus/tsconfig": "3.2.1",
     "@docusaurus/types": "3.2.1",
     "@ladle/react": "^4.0.3",
+    "@mdx-js/react": "^3.0.1",
     "@react-three/drei": "^9.105.3",
     "@react-three/fiber": "^8.16.1",
+    "@tweakpane/core": "^2.0.3",
     "@types/three": "^0.163.0",
     "cannon-es": "^0.20.0",
-    "gl-matrix": "^3.4.3",
-    "three": "^0.163.0",
-    "typescript": "~5.4.4",
-    "@docusaurus/core": "3.2.1",
-    "@docusaurus/preset-classic": "3.2.1",
-    "@mdx-js/react": "^3.0.1",
     "clsx": "^2.1.0",
+    "gl-matrix": "^3.4.3",
     "hast-util-is-element": "^1.1.0",
     "prism-react-renderer": "^2.3.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rehype-katex": "^7.0.0",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "three": "^0.163.0",
+    "tweakpane": "^4.0.3",
+    "typescript": "~5.4.4"
   },
   "browserslist": {
     "production": [
