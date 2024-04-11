@@ -17,8 +17,14 @@ const sidebars: SidebarsConfig = {
   // But you can create a sidebar manually
   sidebar: [
     'index',
-    'particle',
-    'verlet',
+    {
+      type: 'category',
+      label: '質点力学',
+      link: { type: 'doc', id: 'particle/index' },
+      items: [
+        'particle/verlet',
+      ]
+    },
     // springbone
     {
       type: 'category',

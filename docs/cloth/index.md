@@ -1,8 +1,12 @@
 # ClothSimulation
 
 ## constraint
+
 格子状の四角形メッシュを、伸縮、曲げ、ねじれをばねの法則で拘束します。
 3つ組合せると布っぽい動きになります。
+
+:::info 反復処理して安定させるRelaxationと呼ばれる手法
+:::
 
 ### structural constraint
 
