@@ -14,13 +14,68 @@ class ClothPoint {
 }
 
 
+export interface ClothParams {
+  k: number, // 制約バネの特性（基本強度）
+  structural_shrink: number, // 制約バネの特性（構成バネの伸び抵抗）
+  structural_stretch: number, // 制約バネの特性（構成バネの縮み抵抗）
+  shear_shrink: number, // 制約バネの特性（せん断バネの伸び抵抗）
+  shear_stretch: number, // 制約バネの特性（せん断バネの縮み抵抗）
+  bending_shrink: number, // 制約バネの特性（曲げバネの伸び抵抗）
+  bending_stretch: number, // 制約バネの特性（曲げバネの縮み抵抗）
+};
+
+
 // 制約（バネ）
-class ClothConstraint {
-  _p1: any = undefined; // 質点1
-  _p2: any = undefined; // 質点2
-  _rest = 0.0; // バネの自然長
-  _type = 0; // バネの種類（0..構成バネ, 1..せん断バネ, 2..曲げバネ）
-  constructor() {
+abstract class ClothConstraint {
+  // バネの自然長
+  _rest = 0.0;
+  constructor(public readonly _p1: ClothPoint, public readonly _p2: ClothPoint,
+    offsetX: number, offsetY: number,
+    div: number, scale: number) {
+    this._rest = scale * 2.0 / div * Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+  }
+
+  protected _execute(step: number, k: number, shrink: number, stretch: number) {
+    // バネの力（スカラー）
+    const d = vec3.distance(this._p2._pos, this._p1._pos); // 質点間の距離
+    let f = (d - this._rest) * k; // 力（フックの法則、伸びに抵抗し、縮もうとする力がプラス）
+    f >= 0 ? f *= shrink : f *= stretch; // 伸び抵抗と縮み抵抗に対して、それぞれ係数をかける
+
+    // 変位
+    const dx = vec3.create();
+    vec3.sub(dx, this._p2._pos, this._p1._pos); // 力（スカラー）を力（ベクトル）に変換
+    vec3.normalize(dx, dx); // 
+    vec3.scale(dx, dx, f); // 
+    vec3.scale(dx, dx, step * step * 0.5); // 力を変位に変換
+
+    // 位置更新（二つの質点を互いに移動させる）
+    const dx_p1 = vec3.create();
+    vec3.scale(dx_p1, dx, this._p1._weight / (this._p1._weight + this._p2._weight));
+    vec3.add(this._p1._pos, this._p1._pos, dx_p1);
+    const dx_p2 = vec3.create();
+    vec3.scale(dx_p2, dx, this._p2._weight / (this._p1._weight + this._p2._weight));
+    vec3.sub(this._p2._pos, this._p2._pos, dx_p2);
+  }
+
+  abstract execute(step: number, params: ClothParams): void;
+}
+
+
+class StructuralConstraint extends ClothConstraint {
+  override execute(step: number, params: ClothParams) {
+    this._execute(step, params.k, params.structural_shrink, params.structural_stretch);
+  }
+}
+
+class ShearConstraint extends ClothConstraint {
+  override execute(step: number, params: ClothParams) {
+    this._execute(step, params.k, params.structural_shrink, params.structural_stretch);
+  }
+}
+
+class BendingConstraint extends ClothConstraint {
+  override execute(step: number, params: ClothParams) {
+    this._execute(step, params.k, params.structural_shrink, params.structural_stretch);
   }
 }
 
@@ -35,57 +90,95 @@ export class Cloth {
   _indeces: number[] = []; // 頂点インデクス
 
   constructor(
-    /// スケーリング（ベースのサイズは2*2）
-    public readonly _scale: number,
     /// 質点分割数
-    public readonly _div: number) {
+    div: number,
+    /// スケーリング（ベースのサイズは2*2）
+    scale: number,
+  ) {
 
-    for (let y = 0; y < this._div + 1; y++) {
-      for (let x = 0; x < this._div + 1; x++) {
+    // create points
+    for (let y = 0; y < div + 1; y++) {
+      for (let x = 0; x < div + 1; x++) {
         const point = new ClothPoint();
-        point._pos[0] = x / this._div * 2.0 - 1.0;
+        point._pos[0] = x / div * 2.0 - 1.0;
         point._pos[1] = 1.0;
-        point._pos[2] = y / this._div * 2.0;
-        vec3.scale(point._pos, point._pos, this._scale);
+        point._pos[2] = y / div * 2.0;
+        vec3.scale(point._pos, point._pos, scale);
         vec3.copy(point._pre_pos, point._pos);
         point._weight = (y === 0) ? 0.0 : 1.0; // 落ちないように一辺を固定する
         this._points.push(point);
       }
     }
 
-    for (let y = 0; y < this._div + 1; y++) {
-      for (let x = 0; x < this._div + 1; x++) {
-        // 構成バネ（Structural springs）
-        this._constraints.push(this.genConstraint(x, y, -1, 0, 0)); // 左
-        this._constraints.push(this.genConstraint(x, y, 0, -1, 0)); // 上
+    // create constraints
+    for (let y = 0; y < div + 1; y++) {
+      for (let x = 0; x < div + 1; x++) {
+        // +->x
+        // |
+        // y
+        const p = this.getPoint(div, x, y);
 
-        // せん断バネ（Shear springs）
-        this._constraints.push(this.genConstraint(x, y, -1, -1, 1)); // 左上
-        this._constraints.push(this.genConstraint(x, y, 1, -1, 1)); // 右上
+        // Structural
+        // 左
+        // x<-o
+        const left = this.getPoint(div, x - 1, y);
+        if (left) {
+          this._constraints.push(new StructuralConstraint(p, left, -1, 0, div, scale));
+        }
+        // 上
+        // x
+        // ^
+        // o
+        const up = this.getPoint(div, x, y - 1);
+        if (up) {
+          this._constraints.push(new StructuralConstraint(p, up, 0, -1, div, scale));
+        }
 
-        // 曲げバネ（Bending springs）
-        this._constraints.push(this.genConstraint(x, y, -2, 0, 2)); // １つ飛ばし左
-        this._constraints.push(this.genConstraint(x, y, 0, -2, 2)); // １つ飛ばし上
+        // Shear
+        // 左上
+        // x
+        //  \
+        //   o
+        const leftup = this.getPoint(div, x - 1, y - 1);
+        if (leftup) {
+          this._constraints.push(new ShearConstraint(p, leftup, -1, -1, div, scale));
+        }
+        // 右上
+        //   x
+        //  /
+        // o
+        const rightup = this.getPoint(div, x + 1, y - 1);
+        if (rightup) {
+          this._constraints.push(new ShearConstraint(p, rightup, 1, -1, div, scale));
+        }
+
+        // Bending springs
+        // １つ飛ばし左
+        // x<-o<-o
+        const leftleft = this.getPoint(div, x - 2, y);
+        if (leftleft) {
+          this._constraints.push(new BendingConstraint(p, leftleft, -2, 0, div, scale));
+        }
+        // １つ飛ばし上
+        // x
+        // ^
+        // ^
+        // o
+        const upup = this.getPoint(div, x, y - 2);
+        if (upup) {
+          this._constraints.push(new BendingConstraint(p, upup, 0, -2, div, scale));
+        }
       }
     }
 
     // 描画用頂点情報
     this.genVertices();
-    this.genIndeces();
+    this.genIndeces(div);
   }
 
-  // 制約生成
-  genConstraint(x: number, y: number,
-    offsetX: number, offsetY: number, type: number) {
-    const targetX = x + offsetX;
-    const targetY = y + offsetY;
-    if (targetX >= 0 && targetX < this._div + 1 && targetY >= 0 && targetY < this._div + 1) {
-      const constraint = new ClothConstraint();
-      constraint._p1 = this._points[y * (this._div + 1) + x];
-      constraint._p2 = this._points[targetY * (this._div + 1) + targetX];
-      constraint._rest = this._scale * 2.0 / this._div * Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-      constraint._type = type;
-      return constraint;
+  getPoint(div: number, x: number, y: number) {
+    if (x >= 0 && x < div + 1 && y >= 0 && y < div + 1) {
+      return this._points[y * (div + 1) + x];
     }
     return undefined; // 範囲外
   }
@@ -101,24 +194,23 @@ export class Cloth {
   }
 
   // 頂点インデクス生成
-  genIndeces() {
+  genIndeces(div: number) {
     this._indeces = [];
-    for (let y = 0; y < this._div; y++) {
-      for (let x = 0; x < this._div; x++) {
-        this._indeces.push(y * (this._div + 1) + x);
-        this._indeces.push((y + 1) * (this._div + 1) + (x + 1));
-        this._indeces.push(y * (this._div + 1) + (x + 1));
-        this._indeces.push((y + 1) * (this._div + 1) + x);
+    for (let y = 0; y < div; y++) {
+      for (let x = 0; x < div; x++) {
+        this._indeces.push(y * (div + 1) + x);
+        this._indeces.push((y + 1) * (div + 1) + (x + 1));
+        this._indeces.push(y * (div + 1) + (x + 1));
+        this._indeces.push((y + 1) * (div + 1) + x);
       }
     }
   }
 
-  // 更新
+  // 積分フェーズ
   update(step: number,
     f: vec3,
     r: number
   ) {
-    // 積分フェーズ
     for (const point of this._points) {
       // 変位
       const dx = vec3.create();
@@ -133,74 +225,29 @@ export class Cloth {
     }
   }
 
+  // 拘束フェーズ
   constraint(
     step: number,
-    k: number, // 制約バネの特性（基本強度）
-    structural_shrink: number, // 制約バネの特性（構成バネの伸び抵抗）
-    structural_stretch: number, // 制約バネの特性（構成バネの縮み抵抗）
-    shear_shrink: number, // 制約バネの特性（せん断バネの伸び抵抗）
-    shear_stretch: number, // 制約バネの特性（せん断バネの縮み抵抗）
-    bending_shrink: number, // 制約バネの特性（曲げバネの伸び抵抗）
-    bending_stretch: number, // 制約バネの特性（曲げバネの縮み抵抗）
+    params: ClothParams
   ) {
-      for (const constraint of this._constraints) {
-        if (constraint === undefined) {
-          // 無効な制約
-          continue;
-        }
-
-        if (constraint._p1._weight + constraint._p2._weight === 0.0) {
-          // 二つの質点がお互いに固定点であればスキップ（0除算防止）
-          continue;
-        }
-
-        // 伸び抵抗と縮み抵抗
-        let shrink = 0.0; // 伸び抵抗
-        let stretch = 0.0; // 縮み抵抗
-        if (constraint._type === 0) {
-          // 構成バネ
-          shrink = structural_shrink;
-          stretch = structural_stretch;
-        }
-        else if (constraint._type === 1) {
-          // せん断バネ
-          shrink = shear_shrink;
-          stretch = shear_stretch;
-        }
-        else if (constraint._type === 2) {
-          // 曲げバネ
-          shrink = bending_shrink;
-          stretch = bending_stretch;
-        }
-
-        // バネの力（スカラー）
-        const d = vec3.distance(constraint._p2._pos, constraint._p1._pos); // 質点間の距離
-        let f = (d - constraint._rest) * k; // 力（フックの法則、伸びに抵抗し、縮もうとする力がプラス）
-        f >= 0 ? f *= shrink : f *= stretch; // 伸び抵抗と縮み抵抗に対して、それぞれ係数をかける
-
-        // 変位
-        const dx = vec3.create();
-        vec3.sub(dx, constraint._p2._pos, constraint._p1._pos); // 力（スカラー）を力（ベクトル）に変換
-        vec3.normalize(dx, dx); // 
-        vec3.scale(dx, dx, f); // 
-        vec3.scale(dx, dx, step * step * 0.5); // 力を変位に変換
-
-        // 位置更新（二つの質点を互いに移動させる）
-        const dx_p1 = vec3.create();
-        vec3.scale(dx_p1, dx, constraint._p1._weight / (constraint._p1._weight + constraint._p2._weight));
-        vec3.add(constraint._p1._pos, constraint._p1._pos, dx_p1);
-        const dx_p2 = vec3.create();
-        vec3.scale(dx_p2, dx, constraint._p2._weight / (constraint._p1._weight + constraint._p2._weight));
-        vec3.sub(constraint._p2._pos, constraint._p2._pos, dx_p2);
+    for (const constraint of this._constraints) {
+      if (constraint === undefined) {
+        // 無効な制約
+        continue;
       }
+
+      if (constraint._p1._weight + constraint._p2._weight === 0.0) {
+        // 二つの質点がお互いに固定点であればスキップ（0除算防止）
+        continue;
+      }
+
+      constraint.execute(step, params);
+
+    }
   }
 
   // 衝突判定フェーズ
-  collision() {
-    // 衝突判定用の球を適当に定義
-    const sphere_pos = vec3.fromValues(0.0, 0.0, 0.0); // 球の中心位置
-    const sphere_radius = 0.75; // 球の半径
-
+  collision(sphere_pos: vec3, sphere_radius: number) {
     for (const point of this._points) {
       // 球とのヒット
       const v = vec3.create();

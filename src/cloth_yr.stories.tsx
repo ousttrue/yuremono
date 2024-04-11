@@ -4,34 +4,28 @@ import { yrGL, yrGLRenderer, yrGLMaterial } from './cloth/lib/yrGL';
 import { vs_constant, fs_constant } from './cloth/lib/constant';
 import { yrInput } from './cloth/lib/yrInput';
 import { yrCamera } from './cloth/lib/yrCamera';
-import { Cloth } from './cloth/cloth';
+import { Cloth, ClothParams } from './cloth/cloth';
 import { vec3, mat4, vec4 } from 'gl-matrix';
 import { Pane } from "tweakpane";
 
 
 interface InputState {
-  div: number,
-  relaxation: number,
-  collision: boolean, // 球との衝突判定
+  reset: boolean;
+  /// 布の大きさに対するスケーリング（ベースのサイズは2*2）
+  scale: number;
+  div: number;
+  relaxation: number;
+  collision: boolean; // 球との衝突判定
   g: number; // 重力
   w: number; // 風力
   r: number; // 抵抗
-  k: number; // 制約バネの特性（基本強度）
-  structural_shrink: number; // 制約バネの特性（構成バネの伸び抵抗）
-  structural_stretch: number; // 制約バネの特性（構成バネの縮み抵抗）
-  shear_shrink: number; // 制約バネの特性（せん断バネの伸び抵抗）
-  shear_stretch: number; // 制約バネの特性（せん断バネの縮み抵抗）
-  bending_shrink: number; // 制約バネの特性（曲げバネの伸び抵抗）
-  bending_stretch: number; // 制約バネの特性（曲げバネの縮み抵抗）
-  reset: boolean;
+  cloth: ClothParams;
 };
 
 
 class State {
   /// 布（後で初期化する）
   cloth?: Cloth;
-  /// 布の大きさに対するスケーリング（ベースのサイズは2*2）
-  scale = 1.0;
   /// 累積時間
   ms_acc = 0;
   /// 更新処理の余剰時間（次フレームに持ち越す分）
@@ -43,19 +37,27 @@ class State {
   input: yrInput;
   camera: yrCamera;
 
+  // 衝突判定用の球を適当に定義
+  sphere_pos = vec3.fromValues(0.0, 0.0, 0.0); // 球の中心位置
+  sphere_radius = 0.75; // 球の半径
+
   PARAMS = {
     div: 15,
+    /// 布の大きさに対するスケーリング（ベースのサイズは2*2）
+    scale: 1.0,
     relaxation: 2,
     g: 7.0, // 重力
     w: 7.5, // 風力
     r: 0.2, // 抵抗
-    k: 3000.0, // 制約バネの特性（基本強度）
-    structural_shrink: 1.0, // 制約バネの特性（構成バネの伸び抵抗）
-    structural_stretch: 1.0, // 制約バネの特性（構成バネの縮み抵抗）
-    shear_shrink: 1.0, // 制約バネの特性（せん断バネの伸び抵抗）
-    shear_stretch: 1.0, // 制約バネの特性（せん断バネの縮み抵抗）
-    bending_shrink: 1.0, // 制約バネの特性（曲げバネの伸び抵抗）
-    bending_stretch: 0.5, // 制約バネの特性（曲げバネの縮み抵抗）
+    cloth: {
+      k: 3000.0, // 制約バネの特性（基本強度）
+      structural_shrink: 1.0, // 制約バネの特性（構成バネの伸び抵抗）
+      structural_stretch: 1.0, // 制約バネの特性（構成バネの縮み抵抗）
+      shear_shrink: 1.0, // 制約バネの特性（せん断バネの伸び抵抗）
+      shear_stretch: 1.0, // 制約バネの特性（せん断バネの縮み抵抗）
+      bending_shrink: 1.0, // 制約バネの特性（曲げバネの伸び抵抗）
+      bending_stretch: 0.5, // 制約バネの特性（曲げバネの縮み抵抗）
+    },
     reset: true, // リセット
     collision: true, // 球との衝突判定
   } as InputState;
@@ -94,13 +96,11 @@ class State {
       0.0
     );
 
-    // 初期化（リセット）
     if (this.PARAMS.reset) {
-      // init();
-      this.cloth = undefined;
+      // 初期化（リセット）
       this.ms_acc = 0;
       this.ms_surplus = 0;
-      this.cloth = new Cloth(this.scale, this.PARAMS.div); // スケーリング, 質点分割数
+      this.cloth = new Cloth(this.PARAMS.div, this.PARAMS.scale);
       this.PARAMS.reset = false;
     }
 
@@ -136,23 +136,17 @@ class State {
       );
 
       // 制約充足フェーズ
-      for (let ite = 0; ite < this.PARAMS.relaxation; ite++) // 反復処理して安定させる（Relaxationと呼ばれる手法）
-      {
+      for (let ite = 0; ite < this.PARAMS.relaxation; ite++) {
+        // 反復処理して安定させる（Relaxationと呼ばれる手法）
         this.cloth.constraint(
           step,
-          this.PARAMS.k,
-          this.PARAMS.structural_shrink,
-          this.PARAMS.structural_stretch,
-          this.PARAMS.shear_shrink,
-          this.PARAMS.shear_stretch,
-          this.PARAMS.bending_shrink,
-          this.PARAMS.bending_stretch,
+          this.PARAMS.cloth
         );
       }
 
       if (this.PARAMS.collision) {
         // 球との衝突判定
-        this.cloth.collision()
+        this.cloth.collision(this.sphere_pos, this.sphere_radius)
       }
 
       this.ms_acc += ms_step;
@@ -274,46 +268,46 @@ export function ClothSimulation(props: any) {
       title: '制約バネの特性',
     });
 
-    spring.addBinding(PARAMS, 'k', {
+    spring.addBinding(PARAMS.cloth, 'k', {
       label: '基本強度（弱→強）',
       step: 10,
       min: 0,
       max: 5000,
     });
 
-    spring.addBinding(PARAMS, 'structural_shrink', {
+    spring.addBinding(PARAMS.cloth, 'structural_shrink', {
       label: '構成バネの伸び抵抗（弱→強）',
       step: 0.01,
       min: 0,
       max: 1,
     });
-    spring.addBinding(PARAMS, 'structural_stretch', {
+    spring.addBinding(PARAMS.cloth, 'structural_stretch', {
       label: '構成バネの縮み抵抗（弱→強）',
       step: 0.01,
       min: 0,
       max: 1,
     });
 
-    spring.addBinding(PARAMS, 'shear_shrink', {
+    spring.addBinding(PARAMS.cloth, 'shear_shrink', {
       label: 'せん断バネの伸び抵抗（弱→強）',
       step: 0.01,
       min: 0,
       max: 1,
     });
-    spring.addBinding(PARAMS, 'shear_stretch', {
+    spring.addBinding(PARAMS.cloth, 'shear_stretch', {
       label: 'せん断バネの縮み抵抗（弱→強）',
       step: 0.01,
       min: 0,
       max: 1,
     });
 
-    spring.addBinding(PARAMS, 'bending_shrink', {
+    spring.addBinding(PARAMS.cloth, 'bending_shrink', {
       label: '曲げバネの伸び抵抗（弱→強）',
       step: 0.01,
       min: 0,
       max: 1,
     });
-    spring.addBinding(PARAMS, 'bending_stretch', {
+    spring.addBinding(PARAMS.cloth, 'bending_stretch', {
       label: '曲げバネの縮み抵抗（弱→強）',
       step: 0.01,
       min: 0,
