@@ -86,8 +86,6 @@ export class Cloth {
   _points: ClothPoint[] = [];
   // 制約の作成と初期化
   _constraints: ClothConstraint[] = [];
-  _vertices: number[] = []; // 頂点座標
-  _indeces: number[] = []; // 頂点インデクス
 
   constructor(
     /// 質点分割数
@@ -120,15 +118,11 @@ export class Cloth {
 
         // Structural
         // 左
-        // x<-o
         const left = this.getPoint(div, x - 1, y);
         if (left) {
           this._constraints.push(new StructuralConstraint(p, left, -1, 0, div, scale));
         }
         // 上
-        // x
-        // ^
-        // o
         const up = this.getPoint(div, x, y - 1);
         if (up) {
           this._constraints.push(new StructuralConstraint(p, up, 0, -1, div, scale));
@@ -136,17 +130,11 @@ export class Cloth {
 
         // Shear
         // 左上
-        // x
-        //  \
-        //   o
         const leftup = this.getPoint(div, x - 1, y - 1);
         if (leftup) {
           this._constraints.push(new ShearConstraint(p, leftup, -1, -1, div, scale));
         }
         // 右上
-        //   x
-        //  /
-        // o
         const rightup = this.getPoint(div, x + 1, y - 1);
         if (rightup) {
           this._constraints.push(new ShearConstraint(p, rightup, 1, -1, div, scale));
@@ -154,26 +142,17 @@ export class Cloth {
 
         // Bending springs
         // １つ飛ばし左
-        // x<-o<-o
         const leftleft = this.getPoint(div, x - 2, y);
         if (leftleft) {
           this._constraints.push(new BendingConstraint(p, leftleft, -2, 0, div, scale));
         }
         // １つ飛ばし上
-        // x
-        // ^
-        // ^
-        // o
         const upup = this.getPoint(div, x, y - 2);
         if (upup) {
           this._constraints.push(new BendingConstraint(p, upup, 0, -2, div, scale));
         }
       }
     }
-
-    // 描画用頂点情報
-    this.genVertices();
-    this.genIndeces(div);
   }
 
   getPoint(div: number, x: number, y: number) {
@@ -183,31 +162,8 @@ export class Cloth {
     return undefined; // 範囲外
   }
 
-  // 頂点座標生成
-  genVertices() {
-    this._vertices = [];
-    for (const point of this._points) {
-      this._vertices.push(point._pos[0]);
-      this._vertices.push(point._pos[1]);
-      this._vertices.push(point._pos[2]);
-    }
-  }
-
-  // 頂点インデクス生成
-  genIndeces(div: number) {
-    this._indeces = [];
-    for (let y = 0; y < div; y++) {
-      for (let x = 0; x < div; x++) {
-        this._indeces.push(y * (div + 1) + x);
-        this._indeces.push((y + 1) * (div + 1) + (x + 1));
-        this._indeces.push(y * (div + 1) + (x + 1));
-        this._indeces.push((y + 1) * (div + 1) + x);
-      }
-    }
-  }
-
   // 積分フェーズ
-  update(step: number,
+  integrate(
     f: vec3,
     r: number
   ) {
@@ -235,14 +191,11 @@ export class Cloth {
         // 無効な制約
         continue;
       }
-
       if (constraint._p1._weight + constraint._p2._weight === 0.0) {
         // 二つの質点がお互いに固定点であればスキップ（0除算防止）
         continue;
       }
-
       constraint.execute(step, params);
-
     }
   }
 

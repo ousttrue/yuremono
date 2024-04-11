@@ -54,7 +54,15 @@ const sidebars: SidebarsConfig = {
         'refrence/xpbd',
         'refrence/mass_spring_model',
       ]
-    }
+    },
+    'impl/index',
+    // {
+    //   type: 'category',
+    //   label: '実装案',
+    //   items: [
+    //     'impl/index',
+    //   ]
+    // },
   ],
 };
 

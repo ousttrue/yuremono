@@ -41,6 +41,8 @@ class State {
   sphere_pos = vec3.fromValues(0.0, 0.0, 0.0); // 球の中心位置
   sphere_radius = 0.75; // 球の半径
 
+  indices: number[];
+
   PARAMS = {
     div: 15,
     /// 布の大きさに対するスケーリング（ベースのサイズは2*2）
@@ -102,6 +104,17 @@ class State {
       this.ms_surplus = 0;
       this.cloth = new Cloth(this.PARAMS.div, this.PARAMS.scale);
       this.PARAMS.reset = false;
+
+      this.indices = [];
+      const div = this.PARAMS.div;
+      for (let y = 0; y < div; y++) {
+        for (let x = 0; x < div; x++) {
+          this.indices.push(y * (div + 1) + x);
+          this.indices.push((y + 1) * (div + 1) + (x + 1));
+          this.indices.push(y * (div + 1) + (x + 1));
+          this.indices.push((y + 1) * (div + 1) + x);
+        }
+      }
     }
 
     const ms_step = 16; // シミュレーションのタイムステップ（固定）
@@ -130,10 +143,7 @@ class State {
       // 大きなタイムステップでシミュレーションを実行すると精度の問題で破綻が生じるため、
       // フレームの差分時間を固定のシミュレーションタイムステップで分割し、複数回処理する。
       // 余剰時間は次のフレームに持ち越す。
-      this.cloth.update(
-        step, // タイムステップ（秒）
-        f, r,
-      );
+      this.cloth.integrate(f, r,);
 
       // 制約充足フェーズ
       for (let ite = 0; ite < this.PARAMS.relaxation; ite++) {
@@ -154,10 +164,6 @@ class State {
     }
     this.ms_surplus = ms_delta;
 
-    // 描画用頂点座標を更新
-    // Todo : １フレームに１回呼べばいい
-    this.cloth.genVertices();
-
     this.render();
 
     // バッファリングされたWebGLコマンドをただちに実行する
@@ -173,11 +179,18 @@ class State {
     // カラーバッファとZバッファをクリアする
     this.renderer.clearBuffer();
 
+    const vertices = [];
+    for (const point of this.cloth._points) {
+      vertices.push(point._pos[0]);
+      vertices.push(point._pos[1]);
+      vertices.push(point._pos[2]);
+    }
+
     // 布のジオメトリを生成
     // Todo : 毎フレームVBO/IBOを作り直すという、残念な実装になっています
     // : 動的書き換えに適したDYNAMIC_DRAW / bufferSubDataあたりに対応させるべき
     // : また、インターリーブ対応など、他にも最適化の余地があります
-    const geometry_cloth = this.gl.createGeometry(this.cloth._vertices, this.cloth._indeces, this.gl._gl.LINES);
+    const geometry_cloth = this.gl.createGeometry(vertices, this.indices, this.gl._gl.LINES);
 
     // 描画
     const wvp_matrix = mat4.create();
