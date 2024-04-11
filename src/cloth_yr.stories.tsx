@@ -2,7 +2,6 @@ import React from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { yrGL, yrGLRenderer, yrGLMaterial } from './cloth/lib/yrGL';
 import { vs_constant, fs_constant } from './cloth/lib/constant';
-import { yrTimer } from './cloth/lib/yrTimer';
 import { yrInput } from './cloth/lib/yrInput';
 import { yrCamera } from './cloth/lib/yrCamera';
 import { Cloth } from './cloth/cloth';
@@ -41,7 +40,6 @@ class State {
   gl: yrGL;
   renderer: yrGLRenderer;
   material_constant: yrGLMaterial;
-  timer = new yrTimer();
   input: yrInput;
   camera: yrCamera;
 
@@ -65,7 +63,7 @@ class State {
   constructor() {
   }
 
-  onFrame(_gl: WebGL2RenderingContext,
+  lazyInitialize(_gl: WebGL2RenderingContext,
     element: HTMLElement) {
 
     if (!this.renderer) {
@@ -83,10 +81,9 @@ class State {
 
       this.input = new yrInput(element);
     }
+  }
 
-    // タイマー更新
-    this.timer.update();
-
+  onFrame(delta: number) {
     // 入力更新
     this.input.update();
 
@@ -127,7 +124,7 @@ class State {
     const r = 1.0 - this.PARAMS.r * step;
 
     // 更新
-    let ms_delta = this.timer._ms_delta + this.ms_surplus; // フレームの差分時間
+    let ms_delta = 1000 * delta;
     ms_delta = Math.min(ms_delta, 100); // リミッター
     while (ms_delta >= ms_step) {
       // 大きなタイムステップでシミュレーションを実行すると精度の問題で破綻が生じるため、
@@ -202,10 +199,14 @@ class State {
 
 function Render({ state }: { state: State }) {
   useFrame(({ gl, clock }, delta) => {
-    state.onFrame(
+    state.lazyInitialize(
       gl.getContext() as WebGL2RenderingContext,
       gl.domElement
     );
+
+    if (delta > 0) {
+      state.onFrame(delta);
+    }
   }, 1)
 
   return (<></>);
