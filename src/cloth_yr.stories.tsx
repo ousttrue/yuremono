@@ -7,11 +7,13 @@ import { yrInput } from './cloth/lib/yrInput';
 import { yrCamera } from './cloth/lib/yrCamera';
 import { Cloth } from './cloth/cloth';
 import { vec3, mat4, vec4 } from 'gl-matrix';
-import { Stats } from '@react-three/drei'
 import { Pane } from "tweakpane";
 
 
 interface InputState {
+  div: number,
+  relaxation: number,
+  collision: boolean, // 球との衝突判定
   g: number; // 重力
   w: number; // 風力
   r: number; // 抵抗
@@ -22,6 +24,7 @@ interface InputState {
   shear_stretch: number; // 制約バネの特性（せん断バネの縮み抵抗）
   bending_shrink: number; // 制約バネの特性（曲げバネの伸び抵抗）
   bending_stretch: number; // 制約バネの特性（曲げバネの縮み抵抗）
+  reset: boolean;
 };
 
 
@@ -42,18 +45,28 @@ class State {
   input: yrInput;
   camera: yrCamera;
 
-  // -------------------------------------------------------------------------------------------
-  // UI（ボタンやスライダーなど）用パラメータ
-  reset = true; // リセット
-  div = 10; // 質点分割数
-  relaxation = 1; // 制約充足の反復回数
-  collision = false; // 球との衝突判定
+  PARAMS = {
+    div: 15,
+    relaxation: 2,
+    g: 7.0, // 重力
+    w: 7.5, // 風力
+    r: 0.2, // 抵抗
+    k: 3000.0, // 制約バネの特性（基本強度）
+    structural_shrink: 1.0, // 制約バネの特性（構成バネの伸び抵抗）
+    structural_stretch: 1.0, // 制約バネの特性（構成バネの縮み抵抗）
+    shear_shrink: 1.0, // 制約バネの特性（せん断バネの伸び抵抗）
+    shear_stretch: 1.0, // 制約バネの特性（せん断バネの縮み抵抗）
+    bending_shrink: 1.0, // 制約バネの特性（曲げバネの伸び抵抗）
+    bending_stretch: 0.5, // 制約バネの特性（曲げバネの縮み抵抗）
+    reset: true, // リセット
+    collision: true, // 球との衝突判定
+  } as InputState;
 
   constructor() {
   }
 
   onFrame(_gl: WebGL2RenderingContext,
-    element: HTMLElement, inputState: InputState) {
+    element: HTMLElement) {
 
     if (!this.renderer) {
       this.renderer = new yrGLRenderer(_gl);
@@ -71,35 +84,6 @@ class State {
       this.input = new yrInput(element);
     }
 
-    // UI（ボタンやスライダーなど）の取得
-    // for (let i = 0; i < document.form_ui.div.length; i++) {
-    //   if (document.form_ui.div[i].checked) {
-    //     const value = parseInt(document.form_ui.div[i].value);
-    //     if (this.div !== value) {
-    //       this.div = value;
-    //       this.reset = true;
-    //     }
-    //   }
-    // }
-    // for (let i = 0; i < document.form_ui.relaxation.length; i++) {
-    //   if (document.form_ui.relaxation[i].checked) {
-    //     this.relaxation = parseInt(document.form_ui.relaxation[i].value);
-    //   }
-    // }
-
-    // this.g = parseFloat(document.form_ui.g.value);
-    // this.w = parseFloat(document.form_ui.w.value);
-    // this.r = parseFloat(document.form_ui.r.value);
-    // this.k = parseFloat(document.form_ui.k.value);
-    // this.structural_shrink = parseFloat(document.form_ui.structural_shrink.value);
-    // this.structural_stretch = parseFloat(document.form_ui.structural_stretch.value);
-    // this.shear_shrink = parseFloat(document.form_ui.shear_shrink.value);
-    // this.shear_stretch = parseFloat(document.form_ui.shear_stretch.value);
-    // this.bending_shrink = parseFloat(document.form_ui.bending_shrink.value);
-    // this.bending_stretch = parseFloat(document.form_ui.bending_stretch.value);
-    // this.collision = document.form_ui.collision.checked;
-
-
     // タイマー更新
     this.timer.update();
 
@@ -114,13 +98,13 @@ class State {
     );
 
     // 初期化（リセット）
-    if (this.reset) {
+    if (this.PARAMS.reset) {
       // init();
       this.cloth = undefined;
       this.ms_acc = 0;
       this.ms_surplus = 0;
-      this.cloth = new Cloth(this.scale, this.div); // スケーリング, 質点分割数
-      this.reset = false;
+      this.cloth = new Cloth(this.scale, this.PARAMS.div); // スケーリング, 質点分割数
+      this.PARAMS.reset = false;
     }
 
     const ms_step = 16; // シミュレーションのタイムステップ（固定）
@@ -131,8 +115,8 @@ class State {
     // ただ、これだと質点分割数によって布のトータル質量が変わってしまうので、力に質量をかけて相殺しておきます
     // 実質、この実装では質量が意味をなしていないのでmは不要ですが、見通しのため残しておきます
     const m = 1.0; // 質点の質量
-    const g = inputState.g * m; // 重力
-    const w = inputState.w * m; // 風力
+    const g = this.PARAMS.g * m; // 重力
+    const w = this.PARAMS.w * m; // 風力
     // 重力と風力による変位（移動量）を計算しておく
     const f = vec3.create();
     f[1] -= g; // 重力
@@ -140,7 +124,7 @@ class State {
     vec3.scale(f, f, step * step * 0.5); // 力を変位に変換しておく
 
     // 抵抗は速度に対して働く
-    const r = 1.0 - inputState.r * step;
+    const r = 1.0 - this.PARAMS.r * step;
 
     // 更新
     let ms_delta = this.timer._ms_delta + this.ms_surplus; // フレームの差分時間
@@ -155,21 +139,21 @@ class State {
       );
 
       // 制約充足フェーズ
-      for (let ite = 0; ite < this.relaxation; ite++) // 反復処理して安定させる（Relaxationと呼ばれる手法）
+      for (let ite = 0; ite < this.PARAMS.relaxation; ite++) // 反復処理して安定させる（Relaxationと呼ばれる手法）
       {
         this.cloth.constraint(
           step,
-          inputState.k,
-          inputState.structural_shrink,
-          inputState.structural_stretch,
-          inputState.shear_shrink,
-          inputState.shear_stretch,
-          inputState.bending_shrink,
-          inputState.bending_stretch,
+          this.PARAMS.k,
+          this.PARAMS.structural_shrink,
+          this.PARAMS.structural_stretch,
+          this.PARAMS.shear_shrink,
+          this.PARAMS.shear_stretch,
+          this.PARAMS.bending_shrink,
+          this.PARAMS.bending_stretch,
         );
       }
 
-      if (this.collision) {
+      if (this.PARAMS.collision) {
         // 球との衝突判定
         this.cloth.collision()
       }
@@ -216,57 +200,131 @@ class State {
   }
 }
 
-function Render({ state, inputState }: { state: State, inputState: InputState }) {
+function Render({ state }: { state: State }) {
   useFrame(({ gl, clock }, delta) => {
     state.onFrame(
       gl.getContext() as WebGL2RenderingContext,
-      gl.domElement,
-      inputState);
+      gl.domElement
+    );
   }, 1)
 
   return (<></>);
 }
 
-const PARAMS = {
-  factor: 123,
-  title: 'hello',
-  color: '#ff0055',
-};
 let pane: Pane;
 
-export function ClothSimulation(props) {
-  const [inputState, setInputState] = React.useState<InputState>({
-    g: 7.0, // 重力
-    w: 7.5, // 風力
-    r: 0.2, // 抵抗
-    k: 3000.0, // 制約バネの特性（基本強度）
-    structural_shrink: 1.0, // 制約バネの特性（構成バネの伸び抵抗）
-    structural_stretch: 1.0, // 制約バネの特性（構成バネの縮み抵抗）
-    shear_shrink: 1.0, // 制約バネの特性（せん断バネの伸び抵抗）
-    shear_stretch: 1.0, // 制約バネの特性（せん断バネの縮み抵抗）
-    bending_shrink: 1.0, // 制約バネの特性（曲げバネの伸び抵抗）
-    bending_stretch: 0.5, // 制約バネの特性（曲げバネの縮み抵抗）
-  });
-
+export function ClothSimulation(props: any) {
   const [state, setState] = React.useState<State>(null);
+
+  const newState = new State();
+  const PARAMS = newState.PARAMS;
 
   const ref = React.useRef(null);
 
   React.useEffect(() => {
     pane = new Pane({
       container: ref.current,
-      title: "Parameters",
+      title: "Cloth Simulation",
     });
-    pane.addBinding(PARAMS, 'factor');
-    pane.addBinding(PARAMS, 'title');
-    pane.addBinding(PARAMS, 'color');
-    // pane.addBinding(cube, "position");
-    setState(new State());
+    const btn = pane.addButton({
+      title: 'リセット',
+    });
+    btn.on('click', () => {
+      // count += 1;
+      PARAMS.reset = true;
+    });
+    pane.addBinding(
+      PARAMS, 'div',
+      {
+        label: '質点分割数（低負荷→高負荷）',
+        options: { '15': 15, '31': 31 }
+      }
+    );
+    pane.addBinding(
+      PARAMS, 'relaxation',
+      {
+        label: '制約充足の反復回数（低負荷→高負荷）',
+        options: { '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6 }
+      }
+    );
+    pane.addBinding(PARAMS, 'g', {
+      label: '重力（弱→強）',
+      step: 0.1,
+      min: 0,
+      max: 9.8,
+    });
+    pane.addBinding(PARAMS, 'w', {
+      label: '風力（弱→強）',
+      step: 0.1,
+      min: 0,
+      max: 20.0,
+    });
+    pane.addBinding(PARAMS, 'r', {
+      label: '抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 2.0,
+    });
+    pane.addBinding(PARAMS, 'collision', {
+      label: '球との衝突判定',
+    });
+
+    const spring = pane.addFolder({
+      title: '制約バネの特性',
+    });
+
+    spring.addBinding(PARAMS, 'k', {
+      label: '基本強度（弱→強）',
+      step: 10,
+      min: 0,
+      max: 5000,
+    });
+
+    spring.addBinding(PARAMS, 'structural_shrink', {
+      label: '構成バネの伸び抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 1,
+    });
+    spring.addBinding(PARAMS, 'structural_stretch', {
+      label: '構成バネの縮み抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 1,
+    });
+
+    spring.addBinding(PARAMS, 'shear_shrink', {
+      label: 'せん断バネの伸び抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 1,
+    });
+    spring.addBinding(PARAMS, 'shear_stretch', {
+      label: 'せん断バネの縮み抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 1,
+    });
+
+    spring.addBinding(PARAMS, 'bending_shrink', {
+      label: '曲げバネの伸び抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 1,
+    });
+    spring.addBinding(PARAMS, 'bending_stretch', {
+      label: '曲げバネの縮み抵抗（弱→強）',
+      step: 0.01,
+      min: 0,
+      max: 1,
+    });
+
+    setState(newState);
   }, []);
 
   return (<>
     <Canvas style={{ ...props }}>
-      <Render state={state} inputState={inputState} />
+      <Render state={state} />
     </Canvas>
     <div ref={ref} >
     </div>
