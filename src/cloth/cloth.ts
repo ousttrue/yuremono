@@ -36,6 +36,7 @@ export class Cloth {
   _constraints: ClothConstraint[] = [];
 
   root: THREE.Object3D;
+  geometry: THREE.BufferGeometry;
 
   constructor(
     /// 質点分割数
@@ -43,7 +44,6 @@ export class Cloth {
     /// スケーリング（ベースのサイズは2*2）
     public readonly scale: number,
   ) {
-
     // create points
     for (let y = 0; y < div + 1; y++) {
       for (let x = 0; x < div + 1; x++) {
@@ -114,7 +114,7 @@ export class Cloth {
     return undefined; // 範囲外
   }
 
-  makeScene() {
+  private makeScene() {
     const geometry = new THREE.BufferGeometry();
 
     const vertices = new Float32Array(this._points.length * 3);
@@ -139,10 +139,16 @@ export class Cloth {
 
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.root = new THREE.LineSegments(geometry, material);
+    this.geometry = geometry;
   }
 
-  updateVertices()
-  {
+  private updateVertices() {
+    const positionAttribute = this.geometry.getAttribute('position');
+    for (let i = 0; i < this._points.length; ++i) {
+      const p = this._points[i]._pos;
+      positionAttribute.setXYZ(i, p.x, p.y, p.z);
+    }
+    positionAttribute.needsUpdate = true;
   }
 
   // 積分フェーズ
@@ -244,5 +250,7 @@ export class Cloth {
       ms_delta -= ms_step;
     }
     this.ms_surplus = ms_delta;
+
+    this.updateVertices();
   }
 }
