@@ -2,15 +2,17 @@ import React from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { State } from './cloth/state';
 import { Cloth } from './cloth/cloth';
-import { Grid, OrbitControls } from "@react-three/drei";
+import { Grid, OrbitControls, TransformControls } from "@react-three/drei";
 
 
 function Render({ state, cloth }: { state?: State, cloth: Cloth }) {
+  const ref = React.useRef(null);
+
   useFrame(({ clock }, delta) => {
     if (cloth && delta > 0) {
-      // console.log(state.collision);
-      cloth.onFrame(delta, state.spring_params, state.simulation_params,
-        state.collision === true ? state.collider : null);
+      cloth.onFrame(delta,
+        state.spring_params, state.simulation_params,
+        state.collider);
     }
   });
 
@@ -23,6 +25,10 @@ function Render({ state, cloth }: { state?: State, cloth: Cloth }) {
     <Grid cellColor="white" args={[10, 10]} />
     <axesHelper />
     {cloth ? <primitive object={cloth.root} /> : ""}
+
+    <TransformControls ref={ref}>
+      <primitive object={state._collider} />
+    </TransformControls>
   </>
   );
 }
@@ -39,7 +45,6 @@ export function ClothSimulation(props: any) {
     });
     setState(newState);
     newState.makeCloth(setCloth);
-
   }, []);
 
   return (<>
