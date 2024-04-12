@@ -11,7 +11,9 @@ interface Model {
 
 function Render({ model }: { model?: Model }) {
   useFrame(({ clock }, delta) => {
-    model?.onFrame(clock, delta);
+    if (delta > 0) {
+      model?.onFrame(clock, delta);
+    }
   });
   return (<>
     <color attach="background" args={[0, 0, 0]} />
@@ -21,7 +23,6 @@ function Render({ model }: { model?: Model }) {
     <OrbitControls makeDefault />
     <Grid cellColor="white" args={[10, 10]} />
     <axesHelper />
-    <Stats />
     {model ? <primitive object={model.root} /> : ""}
   </>
   );
@@ -32,14 +33,31 @@ export function ScriptingScene() {
 
   React.useEffect(() => {
     // create scene
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const geometry = new THREE.BufferGeometry();
+    const vertices = new Float32Array([
+      -1, -1, 0,
+      1, -1, 0,
+      1, 1, 0,
+      -1, 1, 0,
+    ]);
+    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
+
+    const indices = [
+      0, 1,
+      1, 2,
+      2, 3,
+      3, 0,
+    ]
+    geometry.setIndex(indices);
+
     const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
+    const mesh = new THREE.LineSegments(geometry, material);
 
     setModel({
-      root: cube,
+      root: mesh,
       onFrame: (clock: THREE.Clock, delta: number) => {
-        cube.position.set(Math.sin(clock.elapsedTime), 0, 0);
+        mesh.position.set(Math.sin(clock.elapsedTime), 0, 0);
       }
     });
 
