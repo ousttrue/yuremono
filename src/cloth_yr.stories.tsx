@@ -1,14 +1,16 @@
 import React from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { State } from './cloth/state';
 import { Cloth } from './cloth/cloth';
 import { Grid, OrbitControls } from "@react-three/drei";
 
 
 function Render({ state, cloth }: { state?: State, cloth: Cloth }) {
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock, invalidate }, delta) => {
     if (cloth && delta > 0) {
+      // console.log(cloth);
       cloth.onFrame(delta, state.spring_params, state.simulation_params, state.collider);
+      // invalidate();
     }
   });
 
