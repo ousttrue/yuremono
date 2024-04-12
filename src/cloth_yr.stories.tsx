@@ -6,11 +6,11 @@ import { Grid, OrbitControls } from "@react-three/drei";
 
 
 function Render({ state, cloth }: { state?: State, cloth: Cloth }) {
-  useFrame(({ clock, invalidate }, delta) => {
+  useFrame(({ clock }, delta) => {
     if (cloth && delta > 0) {
-      // console.log(cloth);
-      cloth.onFrame(delta, state.spring_params, state.simulation_params, state.collider);
-      // invalidate();
+      // console.log(state.collision);
+      cloth.onFrame(delta, state.spring_params, state.simulation_params,
+        state.collision === true ? state.collider : null);
     }
   });
 

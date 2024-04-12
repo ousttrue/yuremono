@@ -1,5 +1,6 @@
 import { Pane } from "tweakpane";
-import { Cloth, SpringParams, SimulationParams, Sphere } from './cloth';
+import { Cloth, SimulationParams, Sphere } from './cloth';
+import { SpringParams } from './constraint';
 import * as THREE from 'three';
 
 

@@ -10,7 +10,6 @@ import {
 
 export interface SimulationParams {
   relaxation: number;
-  collision: boolean; // 球との衝突判定
   g: number; // 重力
   w: number; // 風力
   r: number; // 抵抗
@@ -48,9 +47,9 @@ export class Cloth {
     for (let y = 0; y < div + 1; y++) {
       for (let x = 0; x < div + 1; x++) {
         const point = new ClothPoint();
-        point._pos[0] = x / div * 2.0 - 1.0;
-        point._pos[1] = 1.0;
-        point._pos[2] = y / div * 2.0;
+        point._pos.x = x / div * 2.0 - 1.0;
+        point._pos.y = 1.0;
+        point._pos.z = y / div * 2.0;
         point._pos.multiplyScalar(scale);
         point._pre_pos.copy(point._pos);
         point._weight = (y === 0) ? 0.0 : 1.0; // 落ちないように一辺を固定する
@@ -120,9 +119,9 @@ export class Cloth {
     const vertices = new Float32Array(this._points.length * 3);
     for (let i = 0; i < this._points.length; ++i) {
       const point = this._points[i];
-      vertices[i * 3 + 0] = point._pos[0];
-      vertices[i * 3 + 1] = point._pos[1];
-      vertices[i * 3 + 2] = point._pos[2];
+      vertices[i * 3 + 0] = point._pos.x;
+      vertices[i * 3 + 1] = point._pos.y;
+      vertices[i * 3 + 2] = point._pos.z;
     }
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
 
@@ -195,15 +194,16 @@ export class Cloth {
       const v = new THREE.Vector3();
       v.subVectors(point._pos, sphere.position);
       const d = v.length();
-      if (d < sphere.radius) {
+      if (d > 0 && d < sphere.radius) {
         // ヒットしたので球の表面に押し出す
-        v.multiplyScalar(sphere.radius / d);
-        point._pos.add(v);
+        const f = sphere.radius / d;
+        v.multiplyScalar(f);
+        point._pos.addVectors(sphere.position, v);
       }
     }
   }
 
-  onFrame(delta: number, spring_params: SpringParams, simulation: SimulationParams, collider: Sphere) {
+  onFrame(delta: number, spring_params: SpringParams, simulation: SimulationParams, collider?: Sphere) {
     const ms_step = 16; // シミュレーションのタイムステップ（固定）
     const step = ms_step / 1000.0;
     const acc = this.ms_acc / 1000.0; // 累積時間（秒）
@@ -216,8 +216,8 @@ export class Cloth {
     const w = simulation.w * m; // 風力
     // 重力と風力による変位（移動量）を計算しておく
     const f = new THREE.Vector3();
-    f[1] -= g; // 重力
-    f[2] += w * (Math.sin(acc) * 0.5 + 0.5); // 風力（適当になびかせる）
+    f.y -= g; // 重力
+    f.z += w * (Math.sin(acc) * 0.5 + 0.5); // 風力（適当になびかせる）
     f.multiplyScalar(step * step * 0.5); // 力を変位に変換しておく
 
     // 抵抗は速度に対して働く
@@ -230,7 +230,7 @@ export class Cloth {
       // 大きなタイムステップでシミュレーションを実行すると精度の問題で破綻が生じるため、
       // フレームの差分時間を固定のシミュレーションタイムステップで分割し、複数回処理する。
       // 余剰時間は次のフレームに持ち越す。
-      this.integrate(f, r,);
+      this.integrate(f, r);
 
       // 制約充足フェーズ
       for (let ite = 0; ite < simulation.relaxation; ite++) {
@@ -241,7 +241,7 @@ export class Cloth {
         );
       }
 
-      if (simulation.collision) {
+      if (collider) {
         // 球との衝突判定
         this.collision(collider)
       }
