@@ -1,34 +1,48 @@
 import React from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { State } from './cloth/state';
+import { Cloth } from './cloth/cloth';
+import { Grid, OrbitControls } from "@react-three/drei";
 
 
-function Render({ state }: { state: State }) {
-  useFrame(({ gl, clock }, delta) => {
-    state.lazyInitialize(
-      gl.getContext() as WebGL2RenderingContext,
-      gl.domElement
-    );
-
-    if (delta > 0) {
-      state.onFrame(delta);
+function Render({ state, cloth }: { state?: State, cloth: Cloth }) {
+  useFrame(({ clock }, delta) => {
+    if (cloth && delta > 0) {
+      cloth.onFrame(delta, state.spring_params, state.simulation_params, state.collider);
     }
-  }, 1)
+  });
 
-  return (<></>);
+  return (<>
+    <color attach="background" args={[0, 0, 0]} />
+    <ambientLight intensity={0.8} />
+    <pointLight intensity={1} position={[0, 6, 0]} />
+    <directionalLight position={[10, 10, 5]} />
+    <OrbitControls makeDefault />
+    <Grid cellColor="white" args={[10, 10]} />
+    <axesHelper />
+    {cloth ? <primitive object={cloth.root} /> : ""}
+  </>
+  );
 }
 
 
 export function ClothSimulation(props: any) {
   const [state, setState] = React.useState<State>(null);
+  const [cloth, setCloth] = React.useState<Cloth>(null);
   const ref = React.useRef(null);
   React.useEffect(() => {
-    setState(new State(ref.current));
+    const newState = new State(ref.current);
+    newState.pane.on('change', (ev) => {
+      newState.makeCloth(setCloth);
+    });
+    setState(newState);
+    newState.makeCloth(setCloth);
+
   }, []);
 
   return (<>
     <Canvas style={{ ...props }}>
-      <Render state={state} />
+      <Render state={state} cloth={cloth} />
     </Canvas>
     <div ref={ref} >
     </div>
