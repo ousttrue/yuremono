@@ -19,6 +19,7 @@ export class State {
 
   _collision = true; // 球との衝突判定
   _collider_radius = 0.75;
+  hit_radius = 0.8;
   _collider: THREE.Object3D;
 
   indices: number[];
@@ -52,7 +53,7 @@ export class State {
     this.makePane(container);
 
     const geometry = new THREE.SphereGeometry(1, 32, 16);
-    const material = new THREE.MeshStandardMaterial();
+    const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
     this._collider = new THREE.Mesh(geometry, material);
     this._collider.scale.setScalar(this._collider_radius);
   }
@@ -65,7 +66,7 @@ export class State {
     this._collider.getWorldPosition(v);
     return {
       position: v,
-      radius: this._collider_radius,
+      radius: this.hit_radius,
     } as Sphere;
   }
 
@@ -114,21 +115,29 @@ export class State {
       min: 0,
       max: 2.0,
     });
-    this.pane.addBinding(this, '_collision', {
+
+    const collision = this.pane.addFolder({ title: '衝突' })
+    collision.addBinding(this, '_collision', {
       label: '球との衝突判定',
     })
       .on('change', (ev) => {
         console.log(ev.value);
         this._collider.visible = ev.value;
       });
-    this.pane.addBinding(this, '_collider_radius', {
-      label: '半径',
-      step: 0.1,
+    collision.addBinding(this, '_collider_radius', {
+      label: '半径(visual)',
+      step: 0.01,
       min: 0.1,
       max: 2,
     }).on('change', (ev) => {
       console.log(ev.value);
       this._collider.scale.setScalar(ev.value);
+    });
+    collision.addBinding(this, 'hit_radius', {
+      label: '半径(hit)',
+      step: 0.01,
+      min: 0.1,
+      max: 2,
     });
 
     const spring = this.pane.addFolder({

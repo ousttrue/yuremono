@@ -128,16 +128,19 @@ export class Cloth {
     const indices: number[] = [];
     for (let y = 0; y < this.div; y++) {
       for (let x = 0; x < this.div; x++) {
-        indices.push(y * (this.div + 1) + x);
-        indices.push((y + 1) * (this.div + 1) + (x + 1));
-        indices.push(y * (this.div + 1) + (x + 1));
-        indices.push((y + 1) * (this.div + 1) + x);
+        const tl = y * (this.div + 1) + x;
+        const br = (y + 1) * (this.div + 1) + (x + 1);
+        const tr = y * (this.div + 1) + (x + 1);
+        const bl = (y + 1) * (this.div + 1) + x;
+        indices.push(tl, bl, br)
+        indices.push(br, tr, tl)
       }
     }
     geometry.setIndex(indices);
 
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    this.root = new THREE.LineSegments(geometry, material);
+    // this.root = new THREE.LineSegments(geometry, material);
+    this.root = new THREE.Mesh(geometry, material);
     this.geometry = geometry;
   }
 
