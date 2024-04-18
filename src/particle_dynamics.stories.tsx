@@ -13,11 +13,72 @@ function makeSpring(i: number, len: number) {
   return points;
 }
 
+class Point {
+  x: number;
+  y: number;
+  z: number;
+  constructor(x: number, y: number, z: number) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+}
+
+interface Constraint {
+  onFrame(delta: number): void;
+}
+
+/// 
+/// 指定したObjectからの相対位置を維持する
+/// 
+class FixedParent implements Constraint {
+  constructor(public readonly ref: THREE.Object3D) {
+  }
+
+  onFrame(delta: number): void {
+  }
+}
+
+/// 
+/// - ref からの初期方向が元に戻ろうとする(stiffness)
+/// - 減速 dragForce
+/// - ref からの距離を維持
+/// 
+class SpringBone implements Constraint {
+  constructor(public readonly ref: Point) {
+  }
+
+  onFrame(delta: number): void {
+  }
+}
+
+class Simulation {
+  constraints: Constraint[] = [];
+  constructor() {
+  }
+
+  addPoint(id: number, p: Point) {
+  }
+
+  addConstraint(id: number, c: Constraint) {
+  }
+
+  addSpring(id0: number, id1: number) {
+  }
+
+  onFrame(delta: number) {
+    for (const c of this.constraints) {
+      c.onFrame(delta);
+    }
+  }
+}
+
 class Model {
   pane: Pane;
   len: number;
   num: number;
   root: THREE.Object3D;
+  simulation = new Simulation();
 
   constructor(container: HTMLDivElement, setRoot: Function) {
     this.pane = new Pane({
@@ -55,7 +116,8 @@ class Model {
 
     const points = []
     for (let x = 0; x < this.num; ++x) {
-      points.push(...makeSpring(x, this.len))
+      const himo = makeSpring(x, this.len)
+      points.push(...himo)
     }
     const vertices = new Float32Array(points);
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
@@ -79,7 +141,7 @@ class Model {
   }
 
   onFrame(clock: THREE.Clock, delta: number) {
-    // this.root.position.set(Math.sin(clock.elapsedTime), 0, 0);
+    this.simulation.onFrame(delta);
   }
 };
 
@@ -108,9 +170,7 @@ function Render({ model, root }: { model?: Model, root: THREE.Object3D }) {
 export function BoneParticle() {
   const [root, setRoot] = React.useState<THREE.Object3D>(new THREE.Group());
   const [model, setModel] = React.useState<Model>(null);
-
   const ref = React.useRef<HTMLDivElement>(null);
-
   React.useEffect(() => {
     setModel(new Model(ref.current, setRoot));
   }, []);
