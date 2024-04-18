@@ -1,4 +1,4 @@
-import { SpringBone } from '../../src/particle_dynamics.stories';
+import { SpringBone } from "../../src/particle_dynamics_examples.stories";
 
 # rocketjump(始祖)
 
@@ -46,7 +46,7 @@ public class SpringBone : MonoBehaviour
 
     float sqrDt = Time.deltaTime * Time.deltaTime;
 
-    //stiffness
+    //stiffness 👈👀
     Vector3 force = trs.rotation * (boneAxis * stiffnessForce) / sqrDt;
 
     //drag
@@ -92,4 +92,12 @@ public class SpringBone : MonoBehaviour
 ムチのようにしなっていい感じになるかもれない。
 
 親子の質点を並列処理できない。
+:::
+
+:::tip 向きの拘束がある
+親ボーンに対するローカル回転が元に戻る拘束(stiffness)がある。
+:::
+
+:::tip softimage に由来
+https://www.comtec.daikin.co.jp/DC/UsersNotes/Ritaro/tutorial/ICE-Simulation_002/
 :::
