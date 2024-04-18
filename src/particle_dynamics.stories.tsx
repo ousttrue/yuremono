@@ -1,6 +1,6 @@
 import React from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Stats, Grid, OrbitControls } from "@react-three/drei";
+import { Grid, OrbitControls, TransformControls } from "@react-three/drei";
 import * as THREE from 'three';
 import { Pane } from "tweakpane";
 
@@ -98,7 +98,9 @@ function Render({ model, root }: { model?: Model, root: THREE.Object3D }) {
     <OrbitControls makeDefault />
     <Grid cellColor="white" args={[10, 10]} />
     <axesHelper />
-    <primitive object={root} />
+    <TransformControls >
+      <primitive object={root} />
+    </TransformControls>
   </>
   );
 }
