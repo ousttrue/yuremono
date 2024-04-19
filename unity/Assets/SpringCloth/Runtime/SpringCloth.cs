@@ -8,8 +8,17 @@ namespace SpringCloth
 {
     public class SpringCloth : MonoBehaviour
     {
+        [SerializeField, Range(0, 12)]
+        public float Stiffness = 1.0f;
+
+        [SerializeField, Range(0, 1)]
+        public float DragRatio = 0.1f;
+
+        /// <summary>
+        /// 重力の場合 mass を乗算しておくべき？
+        /// </summary>
         [SerializeField]
-        public StrandParam Param;
+        public Vector3 ExternalForce = new Vector3(0, -0.1f, 0);
 
         public List<Transform> _roots = new List<Transform>();
 
@@ -46,6 +55,8 @@ namespace SpringCloth
         // Update is called once per frame
         public void Update()
         {
+            var sqrDt = Time.deltaTime * Time.deltaTime;
+
             // Hookean
             foreach (var c in _constraints)
             {
@@ -60,7 +71,10 @@ namespace SpringCloth
             {
                 foreach (var p in spring.Particles)
                 {
-                    p.CalcForce(Time.deltaTime, Param, true);
+                    p.CalcForce(Time.deltaTime, Stiffness, true);
+
+                    // 重力
+                    p.Force += ExternalForce / sqrDt;
                 }
             }
 
@@ -68,7 +82,7 @@ namespace SpringCloth
             {
                 foreach (var p in s.Particles)
                 {
-                    p.ApplyForce(Time.deltaTime, _colliders);
+                    p.ApplyForce(Time.deltaTime, DragRatio, _colliders);
                 }
             }
         }

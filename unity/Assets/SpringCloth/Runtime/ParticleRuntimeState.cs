@@ -23,9 +23,9 @@ namespace SpringCloth
 
         public Vector3 PositionDelta => CurrentPosition - PreviousPosition;
 
-        public Vector3 Verlet(Vector3 acceleration, float sqrDt)
+        public Vector3 Verlet(float dragRatio, Vector3 acceleration)
         {
-            return CurrentPosition + CurrentPosition - PreviousPosition + acceleration * sqrDt;
+            return CurrentPosition + (CurrentPosition - PreviousPosition) * dragRatio + acceleration;
         }
     }
 }

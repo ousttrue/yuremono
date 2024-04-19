@@ -56,24 +56,28 @@ namespace SpringCloth
             return aimRotation * parentRotation;
         }
 
+        /// <summary>
+        /// 親初期回転だった場合の方向ベクトルに stiffness を乗算した力を作る。
+        /// 大きくなればなるほど、親が初期回転に戻ろうとする比率が増える。
+        /// </summary>
+        /// <param name="parentRotation"></param>
+        /// <param name="_init"></param>
+        /// <param name="stiffness"></param>
+        /// <returns></returns>
+        public static Vector3 StiffnessOriginal(Quaternion parentRotation, in ParticleInitState _init, float stiffness)
+        {
+            return parentRotation * (_init.BoneAxis * stiffness);
+        }
+
         public static Vector3 _CalcForce(
             in ParticleInitState _init,
-            in ParticleRuntimeState _runtime,
             Quaternion parentRotation,
             float delta,
-            in StrandParam param
+            float stiffness
             )
         {
             float sqrDt = delta * delta;
-            // 親の回転から力を作る
-            var force = parentRotation * (_init.BoneAxis * param.Stiffness) / sqrDt;
-
-            // drag
-            force -= _runtime.PositionDelta * param.DragRatio / sqrDt;
-
-            // 重力
-            force += param.ExternalForce / sqrDt;
-
+            var force = StiffnessOriginal(parentRotation, _init, stiffness) / sqrDt;
             return force;
         }
 
@@ -83,15 +87,15 @@ namespace SpringCloth
             Vector3 parentPosition,
             Quaternion parentRotation,
             float delta,
-            Vector3 force,
+            float dragRatio,
+            Vector3 acceleration,
             IReadOnlyList<ParticleCollider> colliders
             )
         {
             float sqrDt = delta * delta;
 
             //verlet
-            // TODO: mass による除算
-            var newPos = _runtime.Verlet(force, sqrDt);
+            var newPos = _runtime.Verlet(dragRatio, acceleration * sqrDt);
 
             // update
             var resolved = NormalizedPosition(parentPosition, _init.SpringLength, newPos);
@@ -121,15 +125,19 @@ namespace SpringCloth
             Vector3 parentPosition,
             Quaternion parentRotation,
             float delta,
-            in StrandParam param,
+            float stiffness,
+            float dragRatio,
             IReadOnlyList<ParticleCollider> colliders
             )
         {
-            var force = _CalcForce(_init, _runtime, parentRotation, delta, param);
-            return _ApplyForce(_init, _runtime, parentPosition, parentRotation, delta, force, colliders);
+            var force = _CalcForce(_init, parentRotation, delta, stiffness);
+            return _ApplyForce(
+                _init, _runtime,
+                parentPosition, parentRotation,
+                delta, dragRatio, force, colliders);
         }
 
-        public void Simulation(float delta, in StrandParam param,
+        public void Simulation(float delta, float stiffness, float dragRatio,
                     IReadOnlyList<ParticleCollider> colliders
         )
         {
@@ -137,15 +145,15 @@ namespace SpringCloth
             var (r, newPos) = _Simulation(_init, _runtime,
                 transform.parent.position,
                 transform.parent.rotation,
-                delta, param, colliders);
+                delta, stiffness, dragRatio, colliders);
             transform.parent.rotation = r;
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
         }
 
-        public void CalcForce(float delta, in StrandParam param, bool add)
+        public void CalcForce(float delta, float stiffness, bool add)
         {
             transform.parent.localRotation = _init.ParentLocalRotation;
-            var f = _CalcForce(_init, _runtime, transform.parent.rotation, delta, param);
+            var f = _CalcForce(_init, transform.parent.rotation, delta, stiffness);
             if (add)
             {
                 Force += f;
@@ -156,17 +164,18 @@ namespace SpringCloth
             }
         }
 
-        public void ApplyForce(float delta, List<ParticleCollider> colliders)
+        public void ApplyForce(float delta, float dragRatio, List<ParticleCollider> colliders)
         {
             var (r, newPos) = _ApplyForce(_init, _runtime,
                 transform.parent.position,
                 transform.parent.rotation,
-                delta, Force, colliders);
+                delta, dragRatio,
+                Force, colliders);
             transform.parent.rotation = r;
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
         }
 
-        void OnDrawGizmos()
+        public void OnDrawGizmos()
         {
             Gizmos.color = GizmoColor;
             if (transform.parent)
