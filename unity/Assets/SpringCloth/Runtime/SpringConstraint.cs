@@ -4,13 +4,13 @@ namespace SpringCloth
 {
     public class SpringConstraint
     {
-        Particle _p0;
+        StrandParticle _p0;
 
-        Particle _p1;
+        StrandParticle _p1;
 
         float _rest;
 
-        public SpringConstraint(Particle p0, Particle p1)
+        public SpringConstraint(StrandParticle p0, StrandParticle p1)
         {
             _p0 = p0;
             _p1 = p1;
@@ -27,7 +27,7 @@ namespace SpringCloth
         ///  フックの法則
         /// </summary>
         /// <returns></returns>
-        public (Particle, Particle, Vector3) Resolve(float delta, float hookean)
+        public (StrandParticle, StrandParticle, Vector3) Resolve(float delta, float hookean)
         {
             // protected _execute(step: number, k: number, shrink: number, stretch: number) {
             // バネの力（スカラー）

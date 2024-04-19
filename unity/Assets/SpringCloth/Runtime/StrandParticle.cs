@@ -4,7 +4,7 @@ using UnityEngine;
 namespace SpringCloth
 {
     [DisallowMultipleComponent]
-    public class Particle : MonoBehaviour
+    public class StrandParticle : MonoBehaviour
     {
         public float SphereRadius = 0.05f;
         public Color GizmoColor = Color.magenta;
@@ -61,7 +61,7 @@ namespace SpringCloth
             in ParticleRuntimeState _runtime,
             Quaternion parentRotation,
             float delta,
-            in SpringParam param
+            in StrandParam param
             )
         {
             float sqrDt = delta * delta;
@@ -121,7 +121,7 @@ namespace SpringCloth
             Vector3 parentPosition,
             Quaternion parentRotation,
             float delta,
-            in SpringParam param,
+            in StrandParam param,
             IReadOnlyList<ParticleCollider> colliders
             )
         {
@@ -129,7 +129,7 @@ namespace SpringCloth
             return _ApplyForce(_init, _runtime, parentPosition, parentRotation, delta, force, colliders);
         }
 
-        public void Simulation(float delta, in SpringParam param,
+        public void Simulation(float delta, in StrandParam param,
                     IReadOnlyList<ParticleCollider> colliders
         )
         {
@@ -142,7 +142,7 @@ namespace SpringCloth
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
         }
 
-        public void CalcForce(float delta, in SpringParam param, bool add)
+        public void CalcForce(float delta, in StrandParam param, bool add)
         {
             transform.parent.localRotation = _init.ParentLocalRotation;
             var f = _CalcForce(_init, _runtime, transform.parent.rotation, delta, param);

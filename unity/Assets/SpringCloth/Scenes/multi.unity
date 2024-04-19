@@ -319,7 +319,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 576902598}
-  - component: {fileID: 576902599}
   m_Layer: 0
   m_Name: s0
   m_TagString: Untagged
@@ -343,23 +342,6 @@ Transform:
   - {fileID: 608962796}
   m_Father: {fileID: 1881548757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &576902599
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 576902597}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 12bfdd7e525d17c4abfcc49e6674ff22, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Param:
-    Stiffness: 1
-    DragRatio: 0.1
-    ExternalForce: {x: 0, y: -0.1, z: 0}
-  Particles: []
 --- !u!1 &608962795
 GameObject:
   m_ObjectHideFlags: 0
@@ -527,7 +509,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 824933599}
-  - component: {fileID: 824933600}
   m_Layer: 0
   m_Name: s1
   m_TagString: Untagged
@@ -551,23 +532,6 @@ Transform:
   - {fileID: 1378024582}
   m_Father: {fileID: 1881548757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &824933600
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 824933598}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 12bfdd7e525d17c4abfcc49e6674ff22, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Param:
-    Stiffness: 1
-    DragRatio: 0.1
-    ExternalForce: {x: 0, y: -0.1, z: 0}
-  Particles: []
 --- !u!1 &1032092047
 GameObject:
   m_ObjectHideFlags: 0
@@ -892,10 +856,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa44ec6b21baefe47ad84abb9395ec69, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _springs:
-  - {fileID: 576902599}
-  - {fileID: 824933600}
-  m_colliders:
+  Param:
+    Stiffness: 1
+    DragRatio: 0.1
+    ExternalForce: {x: 0, y: -0.1, z: 0}
+  _roots:
+  - {fileID: 576902598}
+  - {fileID: 824933599}
+  _colliders:
   - {fileID: 1032092048}
   Hookean: 1000
 --- !u!1660057539 &9223372036854775807
