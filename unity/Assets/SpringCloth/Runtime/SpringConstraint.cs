@@ -36,7 +36,7 @@ namespace SpringCloth
                                                 // f >= 0 ? f *= shrink : f *= stretch; // 伸び抵抗と縮み抵抗に対して、それぞれ係数をかける
 
             // 変位
-            var dx = (this._p1.transform.position - this._p0.transform.position).normalized * f; // * 0.5f * delta * delta;
+            var dx = (this._p1.transform.position - this._p0.transform.position).normalized * f * 0.5f * delta * delta;
 
             // 位置更新（二つの質点を互いに移動させる）
             // const dx_p1 = new THREE.Vector3().copy(dx);

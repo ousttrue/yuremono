@@ -56,6 +56,7 @@ namespace SpringCloth
         public void Update()
         {
             var sqrDt = Time.deltaTime * Time.deltaTime;
+            var stepForce = ExternalForce * sqrDt;
 
             // Hookean
             foreach (var c in _constraints)
@@ -63,18 +64,18 @@ namespace SpringCloth
                 var (p0, p1, f) = c.Resolve(Time.deltaTime, Hookean);
                 // TODO: mass で分配
                 // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
-                p0.Force = f * 0.5f;
-                p1.Force = -f * 0.5f;
+                p0.AddForce(f * 0.5f);
+                p1.AddForce(-f * 0.5f);
             }
 
             foreach (var spring in _springs)
             {
                 foreach (var p in spring.Particles)
                 {
-                    p.CalcForce(Time.deltaTime, Stiffness, true);
+                    p.AddStiffnessForce(Stiffness);
 
                     // 重力
-                    p.Force += ExternalForce / sqrDt;
+                    p.AddForce(stepForce);
                 }
             }
 
@@ -82,7 +83,7 @@ namespace SpringCloth
             {
                 foreach (var p in s.Particles)
                 {
-                    p.ApplyForce(Time.deltaTime, DragRatio, _colliders);
+                    p.ApplyForce(DragRatio, _colliders);
                 }
             }
         }

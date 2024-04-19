@@ -9,7 +9,12 @@ namespace SpringCloth
         public float SphereRadius = 0.05f;
         public Color GizmoColor = Color.magenta;
 
-        public Vector3 Force;
+        Vector3 _force;
+
+        public void AddForce(Vector3 f)
+        {
+            _force += f;
+        }
 
         /// <summary>
         /// 初期化時に固定される不変の情報
@@ -69,33 +74,18 @@ namespace SpringCloth
             return parentRotation * (_init.BoneAxis * stiffness);
         }
 
-        public static Vector3 _CalcForce(
-            in ParticleInitState _init,
-            Quaternion parentRotation,
-            float delta,
-            float stiffness
-            )
-        {
-            float sqrDt = delta * delta;
-            var force = StiffnessOriginal(parentRotation, _init, stiffness) / sqrDt;
-            return force;
-        }
-
         public static (Quaternion parentRotation, Vector3 newPos) _ApplyForce(
             in ParticleInitState _init,
             in ParticleRuntimeState _runtime,
             Vector3 parentPosition,
             Quaternion parentRotation,
-            float delta,
             float dragRatio,
             Vector3 acceleration,
             IReadOnlyList<ParticleCollider> colliders
             )
         {
-            float sqrDt = delta * delta;
-
             //verlet
-            var newPos = _runtime.Verlet(dragRatio, acceleration * sqrDt);
+            var newPos = _runtime.Verlet(dragRatio, acceleration);
 
             // update
             var resolved = NormalizedPosition(parentPosition, _init.SpringLength, newPos);
@@ -124,17 +114,16 @@ namespace SpringCloth
             in ParticleRuntimeState _runtime,
             Vector3 parentPosition,
             Quaternion parentRotation,
-            float delta,
             float stiffness,
             float dragRatio,
             IReadOnlyList<ParticleCollider> colliders
             )
         {
-            var force = _CalcForce(_init, parentRotation, delta, stiffness);
+            var force = StiffnessOriginal(parentRotation, _init, stiffness);
             return _ApplyForce(
                 _init, _runtime,
                 parentPosition, parentRotation,
-                delta, dragRatio, force, colliders);
+                dragRatio, force, colliders);
         }
 
         public void Simulation(float delta, float stiffness, float dragRatio,
@@ -145,34 +134,28 @@ namespace SpringCloth
             var (r, newPos) = _Simulation(_init, _runtime,
                 transform.parent.position,
                 transform.parent.rotation,
-                delta, stiffness, dragRatio, colliders);
+                stiffness, dragRatio, colliders);
             transform.parent.rotation = r;
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
         }
 
-        public void CalcForce(float delta, float stiffness, bool add)
+        public void AddStiffnessForce(float stiffness)
         {
             transform.parent.localRotation = _init.ParentLocalRotation;
-            var f = _CalcForce(_init, transform.parent.rotation, delta, stiffness);
-            if (add)
-            {
-                Force += f;
-            }
-            else
-            {
-                Force = f;
-            }
+            var f = StiffnessOriginal(transform.parent.rotation, _init, stiffness);
+            _force += f;
         }
 
-        public void ApplyForce(float delta, float dragRatio, List<ParticleCollider> colliders)
+        public void ApplyForce(float dragRatio, List<ParticleCollider> colliders)
         {
             var (r, newPos) = _ApplyForce(_init, _runtime,
                 transform.parent.position,
                 transform.parent.rotation,
-                delta, dragRatio,
-                Force, colliders);
+                dragRatio,
+                _force, colliders);
             transform.parent.rotation = r;
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
+            _force = Vector3.zero;
         }
 
         public void OnDrawGizmos()

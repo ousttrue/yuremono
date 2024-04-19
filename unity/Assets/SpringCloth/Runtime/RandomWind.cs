@@ -6,14 +6,17 @@ namespace SpringCloth
 {
 	public class RandomWind : MonoBehaviour
 	{
-		private Strand springBones;
+		private SpringCloth springBones;
 
 		private bool isChecked = true;
+
+		[SerializeField, Range(1, 1000)]
+		public float Power = 10.0f;
 
 		// Use this for initialization
 		void Start()
 		{
-			springBones = GetComponent<Strand>();
+			springBones = GetComponent<SpringCloth>();
 		}
 
 		// Update is called once per frame
@@ -22,9 +25,10 @@ namespace SpringCloth
 			Vector3 force = Vector3.zero;
 			if (isChecked)
 			{
-				force = new Vector3(Mathf.PerlinNoise(Time.time, 0.0f) * 0.005f, 0, 0);
+				force = new Vector3(Mathf.PerlinNoise(Time.time, 0.0f) * Power, 0, 0);
 			}
-			// springBones.Param.ExternalForce = force;
+
+			springBones.ExternalForce = force;
 		}
 
 		void OnGUI()
