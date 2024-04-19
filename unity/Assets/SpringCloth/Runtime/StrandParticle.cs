@@ -74,6 +74,11 @@ namespace SpringCloth
             return parentRotation * (_init.BoneAxis * stiffness);
         }
 
+        public static Vector3 StiffnessHookean(float delta, float stiffness, in ParticleRuntimeState _runtime, Vector3 targetPosition)
+        {
+            return (targetPosition - _runtime.CurrentPosition) * stiffness * delta * delta;
+        }
+
         public static (Quaternion parentRotation, Vector3 newPos) _ApplyForce(
             in ParticleInitState _init,
             in ParticleRuntimeState _runtime,
@@ -126,7 +131,7 @@ namespace SpringCloth
                 dragRatio, force, colliders);
         }
 
-        public void Simulation(float delta, float stiffness, float dragRatio,
+        public void Simulation(float stiffness, float dragRatio,
                     IReadOnlyList<ParticleCollider> colliders
         )
         {
@@ -139,18 +144,33 @@ namespace SpringCloth
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
         }
 
-        public void AddStiffnessForce(float stiffness)
+        public void AddStiffnessForce(float delta, float stiffness)
         {
+            // TODO!
             transform.parent.localRotation = _init.ParentLocalRotation;
-            var f = StiffnessOriginal(transform.parent.rotation, _init, stiffness);
+            var q = Quaternion.identity;
+            if (transform.parent.parent != null)
+            {
+                q = transform.parent.parent.rotation;
+            }
+            q *= _init.ParentLocalRotation;
+            // var f = StiffnessOriginal(transform.parent.rotation, _init, stiffness);
+            var f = StiffnessHookean(delta, stiffness, _runtime, transform.parent.position + q * _init.LocalPosition);
             _force += f;
         }
 
         public void ApplyForce(float dragRatio, List<ParticleCollider> colliders)
         {
+            var q = Quaternion.identity;
+            if (transform.parent.parent != null)
+            {
+                q = transform.parent.parent.rotation;
+            }
+            q *= _init.ParentLocalRotation;
+
             var (r, newPos) = _ApplyForce(_init, _runtime,
                 transform.parent.position,
-                transform.parent.rotation,
+                q,
                 dragRatio,
                 _force, colliders);
             transform.parent.rotation = r;

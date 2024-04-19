@@ -10,7 +10,7 @@ namespace SpringCloth
 
 		private bool isChecked = true;
 
-		[SerializeField, Range(1, 1000)]
+		[SerializeField, Range(0, 1000)]
 		public float Power = 10.0f;
 
 		// Use this for initialization

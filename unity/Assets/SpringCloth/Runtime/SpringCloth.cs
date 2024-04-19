@@ -8,7 +8,7 @@ namespace SpringCloth
 {
     public class SpringCloth : MonoBehaviour
     {
-        [SerializeField, Range(0, 12)]
+        [SerializeField, Range(0, 2)]
         public float Stiffness = 1.0f;
 
         [SerializeField, Range(0, 1)]
@@ -26,7 +26,7 @@ namespace SpringCloth
 
         public List<ParticleCollider> _colliders = new List<ParticleCollider>();
 
-        [SerializeField, Range(1, 500000)]
+        [SerializeField, Range(1, 50000)]
         public float Hookean = 1000.0f;
 
         public List<SpringConstraint> _constraints = new List<SpringConstraint>();
@@ -48,6 +48,8 @@ namespace SpringCloth
                 for (int j = 0; j < s0.Particles.Count; ++j)
                 {
                     _constraints.Add(new SpringConstraint(s0.Particles[j], s1.Particles[j]));
+
+                    // TODO: shear constraint
                 }
             }
         }
@@ -58,6 +60,19 @@ namespace SpringCloth
             var sqrDt = Time.deltaTime * Time.deltaTime;
             var stepForce = ExternalForce * sqrDt;
 
+            // TODO: stiff position
+
+            foreach (var spring in _springs)
+            {
+                foreach (var p in spring.Particles)
+                {
+                    p.AddStiffnessForce(Time.deltaTime, Stiffness * Hookean);
+
+                    // 重力
+                    p.AddForce(stepForce);
+                }
+            }
+
             // Hookean
             foreach (var c in _constraints)
             {
@@ -66,17 +81,6 @@ namespace SpringCloth
                 // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
                 p0.AddForce(f * 0.5f);
                 p1.AddForce(-f * 0.5f);
-            }
-
-            foreach (var spring in _springs)
-            {
-                foreach (var p in spring.Particles)
-                {
-                    p.AddStiffnessForce(Stiffness);
-
-                    // 重力
-                    p.AddForce(stepForce);
-                }
             }
 
             foreach (var s in _springs)
