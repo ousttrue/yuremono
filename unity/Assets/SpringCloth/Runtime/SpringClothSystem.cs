@@ -28,7 +28,7 @@ namespace SpringCloth
 
         public bool Cloth = false;
 
-        public List<SpringConstraint> _constraints = new List<SpringConstraint>();
+        List<SpringConstraint> _constraints = new List<SpringConstraint>();
 
         public void Start()
         {
@@ -39,7 +39,6 @@ namespace SpringCloth
 
             Debug.Log($"Springs: {_springs.Count}");
 
-            // 横向きの拘束を追加
             for (int i = 1; i < _springs.Count; ++i)
             {
                 var s0 = _springs[i - 1];
@@ -47,8 +46,6 @@ namespace SpringCloth
                 for (int j = 0; j < s0.Particles.Count; ++j)
                 {
                     _constraints.Add(new SpringConstraint(s0.Particles[j], s1.Particles[j]));
-
-                    // TODO: shear constraint
                 }
             }
         }
@@ -68,34 +65,32 @@ namespace SpringCloth
                 {
                     p.AddStiffnessForce(Time.deltaTime, Stiffness);
                     p.AddForce(stepForce);
-                    p.ApplyForce(DragRatio, _colliders);
+                    var newPos = p.ApplyVerlet(DragRatio);
+                    newPos = p.Collision(newPos, _colliders, p.Constraint);
+                    p.ApplyRotationFromPosition(newPos);
                 }
             }
         }
 
         void PhaseSolver()
         {
-            var stepForce = ExternalForce;
+            // Force を積算する
             foreach (var spring in _springs)
             {
                 foreach (var p in spring.Particles)
                 {
+                    // 剛性
                     p.AddStiffnessForce(Time.deltaTime, Stiffness);
-
-                    // 重力
-                    p.AddForce(stepForce);
+                    // 重力や風
+                    p.AddForce(ExternalForce);
                 }
             }
 
-            // Hookean
             if (Cloth)
             {
                 foreach (var c in _constraints)
                 {
-                    var (p0, p1, f) = c.Resolve(Time.deltaTime, 1.0f);
-                    // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
-                    p0.AddForce(f);
-                    p1.AddForce(-f);
+                    c.Resolve(Time.deltaTime, 1.0f);
                 }
             }
 
@@ -103,7 +98,19 @@ namespace SpringCloth
             {
                 foreach (var p in s.Particles)
                 {
-                    p.ApplyForce(DragRatio, _colliders);
+                    var newPos = p.ApplyVerlet(DragRatio);
+                    if (Cloth)
+                    {
+                        foreach (var c in _constraints)
+                        {
+                            newPos = c.Collision(newPos,  p.Constraint);
+                        }
+                    }
+                    else
+                    {
+                        newPos = p.Collision(newPos, _colliders, p.Constraint);
+                    }
+                    p.ApplyRotationFromPosition(newPos);
                 }
             }
         }

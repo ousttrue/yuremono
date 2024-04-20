@@ -1,9 +1,18 @@
+using System;
 using UnityEngine;
 
 namespace SpringCloth
 {
     public class SpringConstraint
     {
+        // ４つの質点を参照する。
+        // d--c
+        // |  |
+        // a--b
+        // - a=b
+        // - a-c
+        // - b-d
+        // を拘束する
         StrandParticle _p0;
 
         StrandParticle _p1;
@@ -18,16 +27,22 @@ namespace SpringCloth
             Debug.Log($"SpringConstraint: {p0.transform}, {p1.transform}");
         }
 
-        public void DrawGizmo()
+        // ４つの質点を参照する。
+        // d--c
+        // |  |
+        // a--b
+        //
+        // TODO: 三角形 a-b-(d+c/2) と衝突
+        public Vector3 Collision(Vector3 newPos, Func<Vector3, Vector3> constraint)
         {
-            Gizmos.DrawLine(_p0.transform.position, _p1.transform.position);
+            return newPos;
         }
 
         /// <summary>
         ///  フックの法則
         /// </summary>
         /// <returns></returns>
-        public (StrandParticle, StrandParticle, Vector3) Resolve(float delta, float hookean)
+        public void Resolve(float delta, float hookean)
         {
             // バネの力（スカラー）
             var d = Vector3.Distance(this._p0.transform.position, this._p1.transform.position); // 質点間の距離
@@ -36,7 +51,16 @@ namespace SpringCloth
 
             var dx = (this._p1.transform.position - this._p0.transform.position).normalized * f;
 
-            return (_p0, _p1, dx);
+            // return (_p0, _p1, dx);
+
+            // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
+            _p0.AddForce(dx);
+            _p1.AddForce(-dx);
+        }
+
+        public void DrawGizmo()
+        {
+            Gizmos.DrawLine(_p0.transform.position, _p1.transform.position);
         }
     }
 }

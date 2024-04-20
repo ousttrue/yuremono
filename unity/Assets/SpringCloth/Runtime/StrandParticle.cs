@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,6 +7,13 @@ namespace SpringCloth
     [DisallowMultipleComponent]
     public class StrandParticle : MonoBehaviour
     {
+        /// <summary>
+        /// 0 の場合は動かない(root用)
+        /// 
+        /// TODO: acceleration = force/mass
+        /// </summary>
+        public float Mass = 1.0f;
+
         public float SphereRadius = 0.05f;
         public Color GizmoColor = Color.cyan;
 
@@ -28,8 +36,14 @@ namespace SpringCloth
         [SerializeField]
         ParticleRuntimeState _runtime;
 
-        public void Setup(float radius, Transform simulationSpace = null)
+        public void Setup(float radius, float mass, Transform simulationSpace = null)
         {
+            Mass = mass;
+            if (mass == 0)
+            {
+                GizmoColor = Color.red;
+            }
+
             // gizmo
             SphereRadius = radius;
 
@@ -49,6 +63,10 @@ namespace SpringCloth
 
         public void AddStiffnessForce(float delta, float stiffness)
         {
+            if(Mass==0)
+            {
+                return;
+            }
             var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
             var restPosition = transform.parent.position + restRotation * _init.BoneAxis;
             var f = Stiffness(restPosition, _runtime.CurrentPosition, stiffness);
@@ -60,14 +78,19 @@ namespace SpringCloth
             return (restPosition - currTipPos) * stiffness;
         }
 
-        public void ApplyForce(float dragRatio, List<ParticleCollider> colliders)
+        public Vector3 ApplyVerlet(float dragRatio)
         {
+            var newPos = _runtime.Verlet(dragRatio, _force);
+            return _Constraint(newPos, transform.parent.position, _init.SpringLength);
+        }
+
+        public void ApplyRotationFromPosition(Vector3 newPos)
+        {
+            if (Mass == 0)
+            {
+                return;
+            }
             var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
-            // var restPosition = transform.parent.position + restRotation * _init.BoneAxis;
-            var newPos = _ApplyForce(_init, _runtime,
-                transform.parent.position,
-                dragRatio,
-                _force, colliders);
             _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
             _force = Vector3.zero;
 
@@ -76,29 +99,30 @@ namespace SpringCloth
             transform.parent.rotation = r;
         }
 
-        public static Vector3 _ApplyForce(
-            in ParticleInitState _init,
-            in ParticleRuntimeState _runtime,
-            Vector3 parentPosition,
-            float dragRatio,
-            Vector3 acceleration,
-            IReadOnlyList<ParticleCollider> colliders
-            )
+        public Vector3 Collision(Vector3 newPos, IReadOnlyList<ParticleCollider> colliders, Func<Vector3, Vector3> constraint)
         {
-            var newPos = _runtime.Verlet(dragRatio, acceleration);
-            newPos = Constraint(newPos, parentPosition, _init.SpringLength);
+            return _Collision(newPos, _init, colliders, constraint);
+        }
+
+        public static Vector3 _Collision(Vector3 p, in ParticleInitState _init, IReadOnlyList<ParticleCollider> colliders, Func<Vector3, Vector3> constraint)
+        {
             foreach (var c in colliders)
             {
-                if (c != null && c.TryCollide(newPos, _init.Radius, out var resolved))
+                if (c != null && c.TryCollide(p, _init.Radius, out var resolved))
                 {
-                    newPos = Constraint(resolved, parentPosition, _init.SpringLength);
+                    p = constraint(resolved);
                 }
             }
-            return newPos;
+            return p;
         }
 
         //長さを元に戻す
-        static Vector3 Constraint(Vector3 to, Vector3 from, float len)
+        public Vector3 Constraint(Vector3 to)
+        {
+            return _Constraint(to, transform.parent.position, _init.SpringLength);
+        }
+
+        public static Vector3 _Constraint(Vector3 to, Vector3 from, float len)
         {
             return from + (to - from).normalized * len;
         }
