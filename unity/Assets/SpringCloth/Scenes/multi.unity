@@ -1155,15 +1155,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3483f2b918563284a8a33f7e63261815, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Stiffness: 0.038
-  DragRatio: 0.042
-  ExternalForce: {x: 0, y: -0.1, z: 0}
+  Stiffness: 0.01
+  DragRatio: 0.4
+  ExternalForce: {x: 0, y: 0, z: 0}
   _roots:
   - {fileID: 576902598}
   - {fileID: 824933599}
   _colliders:
   - {fileID: 1032092048}
-  Cloth: 0
+  Cloth: 1
 --- !u!1 &2081626073
 GameObject:
   m_ObjectHideFlags: 0

@@ -68,25 +68,33 @@ namespace SpringCloth
         /// <param name="posMap"></param>
         public void Collide(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap)
         {
-            // var a = _a.transform.position;
-            // var b = _b.transform.position;
-            // var c = (_c.transform.position + _d.transform.position) * 0.5f;
-            // var plane = new Plane(a, b, c);
-            // // var t = new Triangle()
-            // var p = plane.ClosestPointOnPlane(newPos);
-            // var distance = Vector3.Distance(p, newPos);
-            // if (distance > radius)
-            // {
-            //     return;
-            // }
+            var a = posMap[_a];
+            var b = posMap[_b];
+            var c = (posMap[_c] + posMap[_d]) * 0.5f;
+            var plane = new Plane(a, b, c);
+            var p = plane.ClosestPointOnPlane(collider.transform.position);
+            var distance = Vector3.Distance(p, collider.transform.position);
+            if (distance > collider.Radius)
+            {
+                return;
+            }
 
-            // if (!SameSide(p, a, b, c))
-            // {
-            //     return;
-            // }
+            if (!SameSide(p, a, b, c))
+            {
+                return;
+            }
 
-            // // 4点の移動量
-            // var delta = (p - newPos).normalized * (radius - distance);
+            // 4点の移動量
+            var delta = (p - collider.transform.position).normalized * (collider.Radius - distance);
+            // Debug.Log(delta);
+            // posMap[_a] = _a.Constraint(posMap[_a] + delta);
+            // posMap[_b] = _b.Constraint(posMap[_b] + delta);
+            // posMap[_c] = _c.Constraint(posMap[_c] + delta);
+            // posMap[_d] = _d.Constraint(posMap[_d] + delta);
+            posMap[_a] = posMap[_a] + delta;
+            posMap[_b] = posMap[_b] + delta;
+            posMap[_c] = posMap[_c] + delta;
+            posMap[_d] = posMap[_d] + delta;
         }
 
         public void ResolveConstraint(float hookean)
