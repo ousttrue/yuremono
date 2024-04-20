@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace SpringCloth
@@ -28,7 +26,7 @@ namespace SpringCloth
 
         public bool Cloth = false;
 
-        List<SpringConstraint> _constraints = new List<SpringConstraint>();
+        List<ClothConstraint> _constraints = new List<ClothConstraint>();
 
         public void Start()
         {
@@ -43,9 +41,9 @@ namespace SpringCloth
             {
                 var s0 = _springs[i - 1];
                 var s1 = _springs[i];
-                for (int j = 0; j < s0.Particles.Count; ++j)
+                for (int j = 1; j < s0.Particles.Count; ++j)
                 {
-                    _constraints.Add(new SpringConstraint(s0.Particles[j], s1.Particles[j]));
+                    _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
                 }
             }
         }
@@ -90,7 +88,7 @@ namespace SpringCloth
             {
                 foreach (var c in _constraints)
                 {
-                    c.Resolve(Time.deltaTime, 1.0f);
+                    c.ResolveConstraint(1.0f);
                 }
             }
 
@@ -103,7 +101,7 @@ namespace SpringCloth
                     {
                         foreach (var c in _constraints)
                         {
-                            newPos = c.Collision(newPos,  p.Constraint);
+                            newPos = c.Collision(newPos, p.Constraint);
                         }
                     }
                     else

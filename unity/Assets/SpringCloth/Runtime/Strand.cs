@@ -18,10 +18,6 @@ namespace SpringCloth
         public Strand(Transform transform)
         {
             InitRecursive(transform, 0.0f);
-            // foreach (Transform child in transform)
-            // {
-            //     InitRecursive(child);
-            // }
         }
 
         void InitRecursive(Transform t, float mass)
@@ -36,6 +32,5 @@ namespace SpringCloth
                 InitRecursive(child, 1.0f);
             }
         }
-
     }
 }

@@ -5,14 +5,6 @@ namespace SpringCloth
 {
     public class SpringConstraint
     {
-        // ４つの質点を参照する。
-        // d--c
-        // |  |
-        // a--b
-        // - a=b
-        // - a-c
-        // - b-d
-        // を拘束する
         StrandParticle _p0;
 
         StrandParticle _p1;
@@ -27,22 +19,11 @@ namespace SpringCloth
             Debug.Log($"SpringConstraint: {p0.transform}, {p1.transform}");
         }
 
-        // ４つの質点を参照する。
-        // d--c
-        // |  |
-        // a--b
-        //
-        // TODO: 三角形 a-b-(d+c/2) と衝突
-        public Vector3 Collision(Vector3 newPos, Func<Vector3, Vector3> constraint)
-        {
-            return newPos;
-        }
-
         /// <summary>
         ///  フックの法則
         /// </summary>
         /// <returns></returns>
-        public void Resolve(float delta, float hookean)
+        public void Resolve(float hookean)
         {
             // バネの力（スカラー）
             var d = Vector3.Distance(this._p0.transform.position, this._p1.transform.position); // 質点間の距離
