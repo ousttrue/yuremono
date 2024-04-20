@@ -9,18 +9,6 @@ public class SpringBone : MonoBehaviour
 
     public float _radius = 0.5f;
 
-    //バネが戻る力
-    [Range(0, 1)]
-    public float _stiffnessForce = 0.2f;
-
-    //力の減衰力
-    [Range(0, 1)]
-    public float _dragForce = 0.1f;
-
-    public Vector3 _springForce = new Vector3(0.0f, -0.05f, 0.0f);
-
-    public SpringCollider[] _colliders;
-
     private Vector3 _boneAxis;
     private float _springLength;
     private Quaternion _localRotation;
@@ -36,16 +24,17 @@ public class SpringBone : MonoBehaviour
         _prevTipPos = _child.position;
     }
 
-    public void UpdateSpring()
+    public void UpdateSpring(float stiffness, Vector3 externalForce, float dragRatio,
+        IReadOnlyList<SpringCollider> colliders)
     {
         var restRotation = transform.parent.rotation * _localRotation;
         var restPosition = transform.position + restRotation * _boneAxis;
-        var newPos = NewPosition(Time.deltaTime, restPosition, transform.position, _stiffnessForce, _springForce,
-            _currTipPos, _prevTipPos, _dragForce,
-            _springLength, _radius, _colliders);
+        var newPos = NewPosition(Time.deltaTime, restPosition, transform.position, stiffness, externalForce,
+            _currTipPos, _prevTipPos, dragRatio,
+            _springLength, _radius, colliders);
         _prevTipPos = _currTipPos;
         _currTipPos = newPos;
-        transform.rotation = CalcRotation(restRotation, _boneAxis, _currTipPos - transform.position);
+        transform.rotation = CalcRotation(restRotation, _boneAxis, newPos - transform.position);
     }
 
     //回転を適用；

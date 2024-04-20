@@ -10,8 +10,8 @@ namespace SpringCloth
 
 		private bool isChecked = true;
 
-		[SerializeField, Range(0, 1000)]
-		public float Power = 10.0f;
+		// [SerializeField, Range(0, 100)]
+		// public float Power = 10.0f;
 
 		// Use this for initialization
 		void Start()
@@ -25,7 +25,7 @@ namespace SpringCloth
 			Vector3 force = Vector3.zero;
 			if (isChecked)
 			{
-				force = new Vector3(Mathf.PerlinNoise(Time.time, 0.0f) * Power, 0, 0);
+				force = new Vector3(Mathf.PerlinNoise(Time.time, 0.0f) * 0.005f, 0, 0);
 			}
 
 			springBones.ExternalForce = force;

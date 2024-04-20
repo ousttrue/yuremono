@@ -625,12 +625,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 946840626}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa44ec6b21baefe47ad84abb9395ec69, type: 3}
+  m_Script: {fileID: 11500000, guid: 3483f2b918563284a8a33f7e63261815, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Stiffness: 0.01
-  DragRatio: 0.4
-  ExternalForce: {x: 0, y: 0, z: 0}
+  Stiffness: 0.031
+  DragRatio: 0.049
+  ExternalForce: {x: 0, y: -0.1, z: 0}
   _roots:
   - {fileID: 2081626074}
   _colliders: []
@@ -647,6 +647,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd6872bfbacb474469e1262b50cabd4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Power: 10
 --- !u!65 &946840629
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1151,11 +1152,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1881548753}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa44ec6b21baefe47ad84abb9395ec69, type: 3}
+  m_Script: {fileID: 11500000, guid: 3483f2b918563284a8a33f7e63261815, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Stiffness: 1
-  DragRatio: 0.1
+  Stiffness: 0.038
+  DragRatio: 0.042
   ExternalForce: {x: 0, y: -0.1, z: 0}
   _roots:
   - {fileID: 576902598}

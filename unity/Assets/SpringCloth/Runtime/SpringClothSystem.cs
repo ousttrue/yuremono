@@ -8,8 +8,8 @@ namespace SpringCloth
 {
     public class SpringClothSystem : MonoBehaviour
     {
-        [SerializeField, Range(0, 2)]
-        public float Stiffness = 1.0f;
+        [SerializeField, Range(0, 1)]
+        public float Stiffness = 0.1f;
 
         [SerializeField, Range(0, 1)]
         public float DragRatio = 0.1f;
@@ -26,8 +26,7 @@ namespace SpringCloth
 
         public List<ParticleCollider> _colliders = new List<ParticleCollider>();
 
-        [SerializeField, Range(1, 50000)]
-        public float Hookean = 1000.0f;
+        public bool Cloth = false;
 
         public List<SpringConstraint> _constraints = new List<SpringConstraint>();
 
@@ -54,19 +53,34 @@ namespace SpringCloth
             }
         }
 
-        // Update is called once per frame
         public void Update()
         {
-            var sqrDt = Time.deltaTime * Time.deltaTime;
+            // EachSolver();
+            PhaseSolver();
+        }
+
+        void EachSolver()
+        {
             var stepForce = ExternalForce;
-
-            // TODO: stiff position
-
             foreach (var spring in _springs)
             {
                 foreach (var p in spring.Particles)
                 {
-                    p.AddStiffnessForce(Time.deltaTime, Stiffness * Hookean);
+                    p.AddStiffnessForce(Time.deltaTime, Stiffness);
+                    p.AddForce(stepForce);
+                    p.ApplyForce(DragRatio, _colliders);
+                }
+            }
+        }
+
+        void PhaseSolver()
+        {
+            var stepForce = ExternalForce;
+            foreach (var spring in _springs)
+            {
+                foreach (var p in spring.Particles)
+                {
+                    p.AddStiffnessForce(Time.deltaTime, Stiffness);
 
                     // 重力
                     p.AddForce(stepForce);
@@ -74,13 +88,15 @@ namespace SpringCloth
             }
 
             // Hookean
-            foreach (var c in _constraints)
+            if (Cloth)
             {
-                var (p0, p1, f) = c.Resolve(Time.deltaTime, Hookean);
-                // TODO: mass で分配
-                // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
-                p0.AddForce(f * 0.5f);
-                p1.AddForce(-f * 0.5f);
+                foreach (var c in _constraints)
+                {
+                    var (p0, p1, f) = c.Resolve(Time.deltaTime, 1.0f);
+                    // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
+                    p0.AddForce(f);
+                    p1.AddForce(-f);
+                }
             }
 
             foreach (var s in _springs)
@@ -94,9 +110,12 @@ namespace SpringCloth
 
         public void OnDrawGizmos()
         {
-            foreach (var c in _constraints)
+            if (Cloth)
             {
-                c.Draw();
+                foreach (var c in _constraints)
+                {
+                    c.DrawGizmo();
+                }
             }
         }
     }

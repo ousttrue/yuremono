@@ -47,135 +47,67 @@ namespace SpringCloth
             }
         }
 
-        static Vector3 NormalizedPosition(Vector3 p, float len, Vector3 dst)
+        public void AddStiffnessForce(float delta, float stiffness)
         {
-            //長さを元に戻して次の場所を求める
-            return p + (dst - p).normalized * len;
+            var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
+            var restPosition = transform.parent.position + restRotation * _init.BoneAxis;
+            var f = Stiffness(restPosition, _runtime.CurrentPosition, stiffness);
+            _force += f;
         }
 
-        static Quaternion UpdateParentRotation(in Vector3 parentPosition, in Quaternion parentRotation, in Vector3 boneAxis, in Vector3 currentPos)
+        static Vector3 Stiffness(Vector3 restPosition, Vector3 currTipPos, float stiffness)
         {
-            // to world
-            Vector3 aimVector = parentRotation * boneAxis;
-            Quaternion aimRotation = Quaternion.FromToRotation(aimVector, currentPos - parentPosition);
-            return aimRotation * parentRotation;
+            return (restPosition - currTipPos) * stiffness;
         }
 
-        /// <summary>
-        /// 親初期回転だった場合の方向ベクトルに stiffness を乗算した力を作る。
-        /// 大きくなればなるほど、親が初期回転に戻ろうとする比率が増える。
-        /// </summary>
-        /// <param name="parentRotation"></param>
-        /// <param name="_init"></param>
-        /// <param name="stiffness"></param>
-        /// <returns></returns>
-        public static Vector3 StiffnessOriginal(Quaternion parentRotation, in ParticleInitState _init, float stiffness)
+        public void ApplyForce(float dragRatio, List<ParticleCollider> colliders)
         {
-            return parentRotation * (_init.BoneAxis * stiffness);
+            var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
+            // var restPosition = transform.parent.position + restRotation * _init.BoneAxis;
+            var newPos = _ApplyForce(_init, _runtime,
+                transform.parent.position,
+                dragRatio,
+                _force, colliders);
+            _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
+            _force = Vector3.zero;
+
+            // 親の回転として結果を適用する(位置から回転を作る)
+            var r = CalcRotation(restRotation, _init.BoneAxis, newPos - transform.parent.position);
+            transform.parent.rotation = r;
         }
 
-        public static Vector3 StiffnessHookean(float delta, float stiffness, in ParticleRuntimeState _runtime, Vector3 targetPosition)
-        {
-            return (targetPosition - _runtime.CurrentPosition) * stiffness * delta * delta;
-        }
-
-        public static (Quaternion parentRotation, Vector3 newPos) _ApplyForce(
+        public static Vector3 _ApplyForce(
             in ParticleInitState _init,
             in ParticleRuntimeState _runtime,
             Vector3 parentPosition,
-            Quaternion parentRotation,
             float dragRatio,
             Vector3 acceleration,
             IReadOnlyList<ParticleCollider> colliders
             )
         {
-            //verlet
             var newPos = _runtime.Verlet(dragRatio, acceleration);
-
-            // update
-            var resolved = NormalizedPosition(parentPosition, _init.SpringLength, newPos);
-
-            // 衝突判定
+            newPos = Constraint(newPos, parentPosition, _init.SpringLength);
             foreach (var c in colliders)
             {
-                if (c != null)
+                if (c != null && c.TryCollide(newPos, _init.Radius, out var resolved))
                 {
-                    var collision = c.Collide(resolved, _init.Radius);
-                    if (collision.HasValue)
-                    {
-                        // resolved = NormalizedPosition(parentPosition, _init.SpringLength, collision.Value);
-                        resolved = collision.Value;
-                    }
+                    newPos = Constraint(resolved, parentPosition, _init.SpringLength);
                 }
             }
-
-            // 親の回転として結果を適用する(位置から回転を作る)
-            return (UpdateParentRotation(parentPosition, parentRotation, _init.BoneAxis, _runtime.CurrentPosition), resolved);
-
+            return newPos;
         }
 
-        public static (Quaternion parentRotation, Vector3 newPos) _Simulation(
-            in ParticleInitState _init,
-            in ParticleRuntimeState _runtime,
-            Vector3 parentPosition,
-            Quaternion parentRotation,
-            float stiffness,
-            float dragRatio,
-            IReadOnlyList<ParticleCollider> colliders
-            )
+        //長さを元に戻す
+        static Vector3 Constraint(Vector3 to, Vector3 from, float len)
         {
-            var force = StiffnessOriginal(parentRotation, _init, stiffness);
-            return _ApplyForce(
-                _init, _runtime,
-                parentPosition, parentRotation,
-                dragRatio, force, colliders);
+            return from + (to - from).normalized * len;
         }
 
-        public void Simulation(float stiffness, float dragRatio,
-                    IReadOnlyList<ParticleCollider> colliders
-        )
+        //回転を適用；
+        static Quaternion CalcRotation(Quaternion restRotation, Vector3 boneAxis, Vector3 to)
         {
-            transform.parent.localRotation = _init.ParentLocalRotation;
-            var (r, newPos) = _Simulation(_init, _runtime,
-                transform.parent.position,
-                transform.parent.rotation,
-                stiffness, dragRatio, colliders);
-            transform.parent.rotation = r;
-            _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
-        }
-
-        public void AddStiffnessForce(float delta, float stiffness)
-        {
-            // TODO!
-            transform.parent.localRotation = _init.ParentLocalRotation;
-            // var q = Quaternion.identity;
-            // if (transform.parent.parent != null)
-            // {
-            //     q = transform.parent.parent.rotation;
-            // }
-            // q *= _init.ParentLocalRotation;
-            var f = StiffnessOriginal(transform.parent.rotation, _init, stiffness);
-            // var f = StiffnessHookean(delta, stiffness, _runtime, transform.parent.position + q * _init.LocalPosition);
-            _force += f;
-        }
-
-        public void ApplyForce(float dragRatio, List<ParticleCollider> colliders)
-        {
-            var q = Quaternion.identity;
-            if (transform.parent.parent != null)
-            {
-                q = transform.parent.parent.rotation;
-            }
-            q *= _init.ParentLocalRotation;
-
-            var (r, newPos) = _ApplyForce(_init, _runtime,
-                transform.parent.position,
-                q,
-                dragRatio,
-                _force, colliders);
-            transform.parent.rotation = r;
-            _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
-            _force = Vector3.zero;
+            Quaternion aimRotation = Quaternion.FromToRotation(restRotation * boneAxis, to);
+            return aimRotation * restRotation;
         }
 
         public void OnDrawGizmos()
