@@ -7,7 +7,7 @@ namespace SpringCloth
     public class StrandParticle : MonoBehaviour
     {
         public float SphereRadius = 0.05f;
-        public Color GizmoColor = Color.magenta;
+        public Color GizmoColor = Color.cyan;
 
         Vector3 _force;
 
@@ -148,14 +148,14 @@ namespace SpringCloth
         {
             // TODO!
             transform.parent.localRotation = _init.ParentLocalRotation;
-            var q = Quaternion.identity;
-            if (transform.parent.parent != null)
-            {
-                q = transform.parent.parent.rotation;
-            }
-            q *= _init.ParentLocalRotation;
-            // var f = StiffnessOriginal(transform.parent.rotation, _init, stiffness);
-            var f = StiffnessHookean(delta, stiffness, _runtime, transform.parent.position + q * _init.LocalPosition);
+            // var q = Quaternion.identity;
+            // if (transform.parent.parent != null)
+            // {
+            //     q = transform.parent.parent.rotation;
+            // }
+            // q *= _init.ParentLocalRotation;
+            var f = StiffnessOriginal(transform.parent.rotation, _init, stiffness);
+            // var f = StiffnessHookean(delta, stiffness, _runtime, transform.parent.position + q * _init.LocalPosition);
             _force += f;
         }
 

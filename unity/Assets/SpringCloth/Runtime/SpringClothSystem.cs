@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace SpringCloth
 {
-    public class SpringCloth : MonoBehaviour
+    public class SpringClothSystem : MonoBehaviour
     {
         [SerializeField, Range(0, 2)]
         public float Stiffness = 1.0f;
@@ -58,7 +58,7 @@ namespace SpringCloth
         public void Update()
         {
             var sqrDt = Time.deltaTime * Time.deltaTime;
-            var stepForce = ExternalForce * sqrDt;
+            var stepForce = ExternalForce;
 
             // TODO: stiff position
 
