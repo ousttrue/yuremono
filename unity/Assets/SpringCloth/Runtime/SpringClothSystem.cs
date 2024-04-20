@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace SpringCloth
@@ -92,24 +93,38 @@ namespace SpringCloth
                 }
             }
 
+            var posMap = new Dictionary<StrandParticle, Vector3>();
             foreach (var s in _springs)
             {
                 foreach (var p in s.Particles)
                 {
                     var newPos = p.ApplyVerlet(DragRatio);
-                    if (Cloth)
-                    {
-                        foreach (var c in _constraints)
-                        {
-                            newPos = c.Collision(newPos, p.Constraint);
-                        }
-                    }
-                    else
-                    {
-                        newPos = p.Collision(newPos, _colliders, p.Constraint);
-                    }
-                    p.ApplyRotationFromPosition(newPos);
+                    posMap.Add(p, newPos);
                 }
+            }
+
+            if (_constraints.Count > 0 && Cloth)
+            {
+                foreach (var collider in _colliders)
+                {
+                    foreach (var c in _constraints)
+                    {
+                        c.Collide(collider, posMap);
+                    }
+                }
+            }
+            else
+            {
+                var keys = posMap.Keys.ToArray();
+                foreach (var p in keys)
+                {
+                    posMap[p] = p.Collision(posMap[p], _colliders, p.Constraint);
+                }
+            }
+
+            foreach (var (p, newPos) in posMap)
+            {
+                p.ApplyRotationFromPosition(newPos);
             }
         }
 
