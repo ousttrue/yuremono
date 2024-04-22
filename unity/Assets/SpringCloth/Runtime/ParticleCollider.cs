@@ -10,6 +10,10 @@ namespace SpringCloth
 
         public Transform Tail;
 
+        public Ray? HeadTailRay => Tail == null ? null : new Ray { origin = transform.position, direction = (Tail.position - transform.position) };
+
+        public float CapsuleLength => Tail == null ? 0 : Vector3.Distance(Tail.position, transform.position);
+
         public void Reset()
         {
             if (transform.childCount > 0)
@@ -108,6 +112,7 @@ namespace SpringCloth
             {
                 Gizmos.DrawLine(offsets[i] * radius, capsuleEnd + offsets[i] * radius);
             }
+            Gizmos.matrix = Matrix4x4.identity;
         }
 
         public void OnDrawGizmos()

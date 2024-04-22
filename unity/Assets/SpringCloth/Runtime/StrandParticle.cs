@@ -80,6 +80,10 @@ namespace SpringCloth
 
         public Vector3 ApplyVerlet(float dragRatio)
         {
+            if(Mass==0)
+            {
+                return _runtime.CurrentPosition;
+            }
             var newPos = _runtime.Verlet(dragRatio, _force);
             return _Constraint(newPos, transform.parent.position, _init.SpringLength);
         }
