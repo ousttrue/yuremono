@@ -80,15 +80,104 @@ namespace SpringCloth
             }
         }
 
+        struct Intersection
+        {
+            int _xn;
+            Vector3? _xa;
+            Vector3? _xb;
+            Vector3? _xc;
+        }
+
         struct Triangle
         {
             public Plane Plane;
             public Vector3[] Points;
 
+            public Vector3 a => Points[0];
+            public Vector3 b => Points[1];
+            public Vector3 c => Points[2];
+
             public Triangle(Vector3 a, Vector3 b, Vector3 c)
             {
                 Plane = new Plane(a, b, c);
                 Points = new Vector3[] { a, b, c };
+            }
+
+            static float getT(in Vector3 p0, in Vector3 p1, in Vector3 p)
+            {
+                return (p - p0).magnitude / (p1 - p0).magnitude;
+            }
+
+            public bool TryIntersect(in Vector3 p0, in Vector3 p1, out float t)
+            {
+                // xa xb xc
+                // xa xb
+                // xb xc
+                // xc xa
+                // xa
+                // xb
+                // xc
+                // 無
+                var xa = IntersectSegments(p0, p1, a, b);
+                if (xa.HasValue)
+                {
+                    var xb = IntersectSegments(p0, p1, b, c);
+                    if (xb.HasValue)
+                    {
+                        t = Mathf.Min(getT(p0, p1, xa.Value), getT(p0, p1, xb.Value));
+                        return true;
+                    }
+                    else
+                    {
+                        var xc = IntersectSegments(p0, p1, c, a);
+                        if (xc.HasValue)
+                        {
+                            t = Mathf.Min(getT(p0, p1, xc.Value), getT(p0, p1, xa.Value));
+                            return true;
+                        }
+                        else
+                        {
+                            // TODO: xa or 0 or 1
+                            t = getT(p0, p1, xa.Value);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    var xb = IntersectSegments(p0, p1, b, c);
+                    if (xb.HasValue)
+                    {
+                        var xc = IntersectSegments(p0, p1, c, a);
+                        if (xc.HasValue)
+                        {
+                            t = Mathf.Min(getT(p0, p1, xb.Value), getT(p0, p1, xc.Value));
+                            return true;
+                        }
+                        else
+                        {
+                            // TODO: xb or 0 or 1
+                            t = getT(p0, p1, xb.Value);
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        var xc = IntersectSegments(p0, p1, c, a);
+                        if (xc.HasValue)
+                        {
+                            // TODO: xc or 0 or 1
+                            t = getT(p0, p1, xc.Value);
+                            return true;
+                        }
+                        else
+                        {
+                            // TODO: 内なら 0 or 1
+                            t = 0;
+                            return false;
+                        }
+                    }
+                }
             }
 
             public void DrawGizmo()
@@ -107,11 +196,15 @@ namespace SpringCloth
             public float MinDistance;
             public float MinDistanceClmap;
             public Vector3 MinOnPlaneClamp;
+            public Vector3 MinPos;
+            public Vector3 MinClamp;
 
             public Vector3 MaxOnPlane;
             public float MaxDistance;
             public float MaxDistanceClamp;
             public Vector3 MaxOnPlaneClamp;
+            public Vector3 MaxPos;
+            public Vector3 MaxClamp;
 
             /// <summary>
             /// min and max is tail and head.
@@ -133,6 +226,10 @@ namespace SpringCloth
                     MaxDistance = tailDistance;
                     MinOnPlane = t.Plane.ClosestPointOnPlane(collider.transform.position);
                     MaxOnPlane = t.Plane.ClosestPointOnPlane(collider.Tail.position);
+                    MinClamp = collider.transform.position;
+                    MaxClamp = collider.Tail.position;
+                    MinPos = collider.transform.position;
+                    MaxPos = collider.Tail.position;
                 }
                 else
                 {
@@ -141,6 +238,10 @@ namespace SpringCloth
                     MinDistance = tailDistance;
                     MaxOnPlane = t.Plane.ClosestPointOnPlane(collider.transform.position);
                     MinOnPlane = t.Plane.ClosestPointOnPlane(collider.Tail.position);
+                    MaxClamp = collider.transform.position;
+                    MinClamp = collider.Tail.position;
+                    MaxPos = collider.transform.position;
+                    MinPos = collider.Tail.position;
                 }
 
                 // Intersect
@@ -175,8 +276,10 @@ namespace SpringCloth
                 }
 
                 // 
-                MaxOnPlaneClamp = MinOnPlane + (MaxOnPlane - MinOnPlane) * (MaxDistanceClamp - MinDistance) / (MaxDistance - MinDistance);
-                MinOnPlaneClamp = MaxOnPlane + (MinOnPlane - MaxOnPlane) * (MinDistanceClmap - MaxDistance) / (MinDistance - MaxDistance);
+                MaxOnPlaneClamp = Vector3.Lerp(MinOnPlane, MaxOnPlane, (MaxDistanceClamp - MinDistance) / (MaxDistance - MinDistance));
+                MinOnPlaneClamp = Vector3.Lerp(MaxOnPlane, MinOnPlane, (MinDistanceClmap - MaxDistance) / (MinDistance - MaxDistance));
+                MaxClamp = Vector3.Lerp(MinPos, MaxPos, (MaxDistanceClamp - MinDistance) / (MaxDistance - MinDistance));
+                MinClamp = Vector3.Lerp(MaxPos, MinPos, (MinDistanceClmap - MaxDistance) / (MinDistance - MaxDistance));
             }
 
             public void DrawGizmo()
@@ -198,24 +301,19 @@ namespace SpringCloth
         }
         CapsuleInfo? _capsule;
 
-        int _xn;
-        Vector3? _xa;
-        Vector3? _xb;
-        Vector3? _xc;
 
         void ColliderCapsule(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap)
         {
-            _xa = default;
-            _xb = default;
-            _xc = default;
-            _xn = 0;
+            // _xa = default;
+            // _xb = default;
+            // _xc = default;
+            // _xn = 0;
 
             var a = posMap[_a];
             var b = posMap[_b];
             var c = (posMap[_c] + posMap[_d]) * 0.5f;
-            var t = new Triangle(a, b, c);
-            // var ray = collider.HeadTailRay.Value;
-            var capsule = new CapsuleInfo(t, collider);
+            var triangle = new Triangle(a, b, c);
+            var capsule = new CapsuleInfo(triangle, collider);
             if (!capsule.Intersected)
             {
                 _capsule = default;
@@ -224,34 +322,9 @@ namespace SpringCloth
 
             _capsule = capsule;
 
-            _xa = IntersectSegments(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, a, b);
-            if (_xa.HasValue)
+            if (capsule.Triangle.TryIntersect(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, out var t))
             {
-                ++_xn;
-            }
-            _xb = IntersectSegments(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, b, c);
-            if (_xb.HasValue)
-            {
-                ++_xn;
-            }
-            var xc = IntersectSegments(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, c, a);
-            if (xc.HasValue)
-            {
-                ++_xn;
-            }
-
-            if (_xn >= 2)
-            {
-                //
-            }
-            else if (_xn == 1)
-            {
-
-            }
-            else
-            {
-                // 内か外か
-
+                ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, t), collider.Radius, posMap);
             }
         }
 
@@ -319,20 +392,20 @@ namespace SpringCloth
         public void DrawGizmo()
         {
             Gizmos.color = Color.red;
-            if (_xa.HasValue)
-            {
-                Gizmos.DrawSphere(_xa.Value, 0.01f);
-            }
-            if (_xb.HasValue)
-            {
-                Gizmos.DrawSphere(_xb.Value, 0.01f);
-            }
-            if (_xc.HasValue)
-            {
-                Gizmos.DrawSphere(_xc.Value, 0.01f);
-            }
+            // if (_xa.HasValue)
+            // {
+            //     Gizmos.DrawSphere(_xa.Value, 0.01f);
+            // }
+            // if (_xb.HasValue)
+            // {
+            //     Gizmos.DrawSphere(_xb.Value, 0.01f);
+            // }
+            // if (_xc.HasValue)
+            // {
+            //     Gizmos.DrawSphere(_xc.Value, 0.01f);
+            // }
 
-            if (_capsule.HasValue && _xn > 0)
+            if (_capsule.HasValue)
             {
                 _capsule.Value.DrawGizmo();
             }
