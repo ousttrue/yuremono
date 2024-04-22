@@ -15,21 +15,21 @@ namespace SpringCloth
         ///  - Runtime は Start に Reset で作ったデータが無かったら
         /// </summary>
         /// <param name="transform"></param>
-        public Strand(Transform transform)
+        public Strand(Transform transform, float radius)
         {
-            InitRecursive(transform, 0.0f);
+            InitRecursive(transform, 0.0f, radius);
         }
 
-        void InitRecursive(Transform t, float mass)
+        void InitRecursive(Transform t, float mass, float radius)
         {
             var p = t.gameObject.AddComponent<StrandParticle>();
-            p.Setup(0.05f, mass);
+            p.Setup(radius, mass);
 
             Particles.Add(p);
 
             foreach (Transform child in t)
             {
-                InitRecursive(child, 1.0f);
+                InitRecursive(child, 1.0f, radius);
             }
         }
     }

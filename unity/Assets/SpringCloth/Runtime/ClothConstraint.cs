@@ -87,14 +87,14 @@ namespace SpringCloth
             // 4点の移動量
             var delta = (p - collider.transform.position).normalized * (collider.Radius - distance);
             // Debug.Log(delta);
-            // posMap[_a] = _a.Constraint(posMap[_a] + delta);
-            // posMap[_b] = _b.Constraint(posMap[_b] + delta);
-            // posMap[_c] = _c.Constraint(posMap[_c] + delta);
-            // posMap[_d] = _d.Constraint(posMap[_d] + delta);
-            posMap[_a] = posMap[_a] + delta;
-            posMap[_b] = posMap[_b] + delta;
-            posMap[_c] = posMap[_c] + delta;
-            posMap[_d] = posMap[_d] + delta;
+            posMap[_a] = _a.Constraint(posMap[_a] + delta);
+            posMap[_b] = _b.Constraint(posMap[_b] + delta);
+            posMap[_c] = _c.Constraint(posMap[_c] + delta);
+            posMap[_d] = _d.Constraint(posMap[_d] + delta);
+            // posMap[_a] = posMap[_a] + delta;
+            // posMap[_b] = posMap[_b] + delta;
+            // posMap[_c] = posMap[_c] + delta;
+            // posMap[_d] = posMap[_d] + delta;
         }
 
         public void ResolveConstraint(float hookean)

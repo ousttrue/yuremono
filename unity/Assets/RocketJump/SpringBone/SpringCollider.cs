@@ -3,7 +3,7 @@
 public class SpringCollider : MonoBehaviour
 {
 	//半径
-	public float radius = 0.5f;
+	public float radius = 0.05f;
 
 	private void OnDrawGizmosSelected()
 	{

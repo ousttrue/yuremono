@@ -29,11 +29,14 @@ namespace SpringCloth
 
         List<ClothConstraint> _constraints = new List<ClothConstraint>();
 
+        [Range(0.001f, 0.5f)]
+        public float _defaultStrandRaius = 0.01f;
+
         public void Start()
         {
             foreach (var root in _roots)
             {
-                _springs.Add(new Strand(root));
+                _springs.Add(new Strand(root, _defaultStrandRaius));
             }
 
             Debug.Log($"Springs: {_springs.Count}");
