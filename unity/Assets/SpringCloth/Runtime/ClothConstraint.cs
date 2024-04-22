@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Security.Cryptography;
 using UnityEngine;
 
 namespace SpringCloth
@@ -99,102 +97,186 @@ namespace SpringCloth
             }
         }
 
+
         struct CapsuleInfo
         {
             public ParticleCollider Collider;
             public Triangle Triangle;
-            public Vector3 HeadOnPlane;
-            public float HeadDIstance;
-            public Vector3 TailOnPlane;
-            public float TailDistance;
+
+            public Vector3 MinOnPlane;
+            public float MinDistance;
+            public float MinDistanceClmap;
+            public Vector3 MinOnPlaneClamp;
+
+            public Vector3 MaxOnPlane;
+            public float MaxDistance;
+            public float MaxDistanceClamp;
+            public Vector3 MaxOnPlaneClamp;
+
+            /// <summary>
+            /// min and max is tail and head.
+            /// </summary>
+            public bool Reverse;
+
+            public bool Intersected;
+
             public CapsuleInfo(in Triangle t, ParticleCollider collider)
             {
                 Collider = collider;
                 Triangle = t;
-                HeadOnPlane = t.Plane.ClosestPointOnPlane(collider.transform.position);
-                TailOnPlane = t.Plane.ClosestPointOnPlane(collider.Tail.position);
-                HeadDIstance = t.Plane.GetDistanceToPoint(collider.transform.position);
-                TailDistance = t.Plane.GetDistanceToPoint(collider.Tail.position);
-            }
-
-            public bool Intersect()
-            {
-                if (HeadDIstance < -Collider.Radius)
+                var headDistance = t.Plane.GetDistanceToPoint(collider.transform.position);
+                var tailDistance = t.Plane.GetDistanceToPoint(collider.Tail.position);
+                if (headDistance <= tailDistance)
                 {
-                    if (TailDistance < -Collider.Radius)
-                    {
-                        return false;
-                    }
+                    Reverse = false;
+                    MinDistance = headDistance;
+                    MaxDistance = tailDistance;
+                    MinOnPlane = t.Plane.ClosestPointOnPlane(collider.transform.position);
+                    MaxOnPlane = t.Plane.ClosestPointOnPlane(collider.Tail.position);
                 }
-                else if (HeadDIstance > Collider.Radius)
+                else
                 {
-                    if (TailDistance > Collider.Radius)
-                    {
-                        return false;
-                    }
+                    Reverse = true;
+                    MaxDistance = headDistance;
+                    MinDistance = tailDistance;
+                    MaxOnPlane = t.Plane.ClosestPointOnPlane(collider.transform.position);
+                    MinOnPlane = t.Plane.ClosestPointOnPlane(collider.Tail.position);
                 }
 
-                return true;
+                // Intersect
+                Intersected = true;
+                MinDistanceClmap = MinDistance;
+                MinOnPlaneClamp = MinOnPlane;
+                MaxDistanceClamp = MaxDistance;
+                MaxOnPlaneClamp = MaxOnPlane;
+                if (MinDistance < -Collider.Radius)
+                {
+                    if (MaxDistance < -Collider.Radius)
+                    {
+                        Intersected = false;
+                    }
+                    else
+                    {
+                        // clamp Min
+                        MinDistanceClmap = -Collider.Radius;
+                    }
+                }
+                else if (MaxDistance > Collider.Radius)
+                {
+                    if (MinDistance > Collider.Radius)
+                    {
+                        Intersected = false;
+                    }
+                    else
+                    {
+                        // clamp Max
+                        MaxDistanceClamp = Collider.Radius;
+                    }
+                }
+
+                // 
+                MaxOnPlaneClamp = MinOnPlane + (MaxOnPlane - MinOnPlane) * (MaxDistanceClamp - MinDistance) / (MaxDistance - MinDistance);
+                MinOnPlaneClamp = MaxOnPlane + (MinOnPlane - MaxOnPlane) * (MinDistanceClmap - MaxDistance) / (MinDistance - MaxDistance);
             }
 
             public void DrawGizmo()
             {
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(Collider.transform.position, HeadOnPlane);
-                Gizmos.DrawWireSphere(HeadOnPlane, 0.01f);
                 Gizmos.color = Color.blue;
-                Gizmos.DrawLine(Collider.Tail.position, TailOnPlane);
-                Gizmos.DrawWireSphere(TailOnPlane, 0.01f);
+                Gizmos.DrawLine(Reverse ? Collider.Tail.position : Collider.transform.position, MinOnPlane);
+                Gizmos.DrawWireSphere(MinOnPlane, 0.01f);
 
+                Gizmos.color = Color.blue;
+                Gizmos.DrawLine(Reverse ? Collider.transform.position : Collider.Tail.position, MaxOnPlane);
+                Gizmos.DrawWireSphere(MaxOnPlane, 0.01f);
+
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(MinOnPlaneClamp, MaxOnPlaneClamp);
+
+                Gizmos.color = Color.green;
                 Triangle.DrawGizmo();
             }
         }
         CapsuleInfo? _capsule;
 
+        int _xn;
+        Vector3? _xa;
+        Vector3? _xb;
+        Vector3? _xc;
+
         void ColliderCapsule(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap)
         {
+            _xa = default;
+            _xb = default;
+            _xc = default;
+            _xn = 0;
+
             var a = posMap[_a];
             var b = posMap[_b];
             var c = (posMap[_c] + posMap[_d]) * 0.5f;
             var t = new Triangle(a, b, c);
             // var ray = collider.HeadTailRay.Value;
             var capsule = new CapsuleInfo(t, collider);
-            if (!capsule.Intersect())
+            if (!capsule.Intersected)
             {
                 _capsule = default;
+                return;
+            }
+
+            _capsule = capsule;
+
+            _xa = IntersectSegments(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, a, b);
+            if (_xa.HasValue)
+            {
+                ++_xn;
+            }
+            _xb = IntersectSegments(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, b, c);
+            if (_xb.HasValue)
+            {
+                ++_xn;
+            }
+            var xc = IntersectSegments(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, c, a);
+            if (xc.HasValue)
+            {
+                ++_xn;
+            }
+
+            if (_xn >= 2)
+            {
+                //
+            }
+            else if (_xn == 1)
+            {
+
             }
             else
             {
-                _capsule = capsule;
+                // 内か外か
+
             }
         }
 
-        bool MoveSphere(in Vector3 p, in Vector3 delta, Dictionary<StrandParticle, Vector3> posMap)
+        static Vector3? IntersectSegments(in Vector3 a, in Vector3 b, in Vector3 c, in Vector3 d)
         {
-            var a = posMap[_a];
-            var b = posMap[_b];
-            var c = (posMap[_c] + posMap[_d]) * 0.5f;
-            var plane = new Plane(a, b, c);
-
-            // var p = plane.ClosestPointOnPlane(collider);
-
-            if (!SameSide(p, a, b, c))
+            var deno = Vector3.Cross(b - a, d - c).magnitude;
+            // point error = { INF, INF };
+            if (deno == 0.0)
             {
-                return false;
+                // 線分が平行
+                return default;
+            }
+            var s = Vector3.Cross(c - a, d - c).magnitude / deno;
+            var t = Vector3.Cross(b - a, a - c).magnitude / deno;
+            if (s < 0.0 || 1.0 < s || t < 0.0 || 1.0 < t)
+            {
+                // 線分が交差していない
+                return default;
             }
 
-            // 4点の移動量
-            // var delta = (p - collider).normalized * (radius - distance);
-            // Debug.Log(delta);
-            posMap[_a] = _a.Constraint(posMap[_a] + delta);
-            posMap[_b] = _b.Constraint(posMap[_b] + delta);
-            posMap[_c] = _c.Constraint(posMap[_c] + delta);
-            posMap[_d] = _d.Constraint(posMap[_d] + delta);
-            // posMap[_a] = posMap[_a] + delta;
-            // posMap[_b] = posMap[_b] + delta;
-            // posMap[_c] = posMap[_c] + delta;
-            // posMap[_d] = posMap[_d] + delta;
-            return true;
+            return new Vector3(
+                a.x + s * (b - a).x,
+                a.y + s * (b - a).y,
+                a.z + s * (b - a).z
+             );
         }
 
         bool ColliderSphere(in Vector3 collider, float radius, Dictionary<StrandParticle, Vector3> posMap)
@@ -223,10 +305,6 @@ namespace SpringCloth
             posMap[_b] = _b.Constraint(posMap[_b] + delta);
             posMap[_c] = _c.Constraint(posMap[_c] + delta);
             posMap[_d] = _d.Constraint(posMap[_d] + delta);
-            // posMap[_a] = posMap[_a] + delta;
-            // posMap[_b] = posMap[_b] + delta;
-            // posMap[_c] = posMap[_c] + delta;
-            // posMap[_d] = posMap[_d] + delta;
             return true;
         }
 
@@ -240,7 +318,21 @@ namespace SpringCloth
 
         public void DrawGizmo()
         {
-            if (_capsule.HasValue)
+            Gizmos.color = Color.red;
+            if (_xa.HasValue)
+            {
+                Gizmos.DrawSphere(_xa.Value, 0.01f);
+            }
+            if (_xb.HasValue)
+            {
+                Gizmos.DrawSphere(_xb.Value, 0.01f);
+            }
+            if (_xc.HasValue)
+            {
+                Gizmos.DrawSphere(_xc.Value, 0.01f);
+            }
+
+            if (_capsule.HasValue && _xn > 0)
             {
                 _capsule.Value.DrawGizmo();
             }
