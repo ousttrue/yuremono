@@ -63,7 +63,7 @@ namespace SpringCloth
 
         public void AddStiffnessForce(float delta, float stiffness)
         {
-            if(Mass==0)
+            if (Mass == 0)
             {
                 return;
             }
@@ -80,9 +80,11 @@ namespace SpringCloth
 
         public Vector3 ApplyVerlet(float dragRatio)
         {
-            if(Mass==0)
+            if (Mass == 0)
             {
-                return _runtime.CurrentPosition;
+                var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
+                var restPosition = transform.parent.position + restRotation * _init.LocalPosition;
+                return restPosition;
             }
             var newPos = _runtime.Verlet(dragRatio, _force);
             return _Constraint(newPos, transform.parent.position, _init.SpringLength);

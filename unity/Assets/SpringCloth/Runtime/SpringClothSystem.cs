@@ -8,16 +8,16 @@ namespace SpringCloth
     public class SpringClothSystem : MonoBehaviour
     {
         [SerializeField, Range(0, 1)]
-        public float Stiffness = 0.1f;
+        public float Stiffness = 0.01f;
 
         [SerializeField, Range(0, 1)]
-        public float DragRatio = 0.1f;
+        public float DragRatio = 0.4f;
 
         /// <summary>
         /// 重力の場合 mass を乗算しておくべき？
         /// </summary>
         [SerializeField]
-        public Vector3 ExternalForce = new Vector3(0, -0.1f, 0);
+        public Vector3 ExternalForce = new Vector3(0, -0.001f, 0);
 
         public List<Transform> _roots = new List<Transform>();
 
@@ -45,7 +45,7 @@ namespace SpringCloth
             {
                 var s0 = _springs[i - 1];
                 var s1 = _springs[i];
-                for (int j = 1; j < s0.Particles.Count; ++j)
+                for (int j = 1; j < s0.Particles.Count && j < s1.Particles.Count; ++j)
                 {
                     _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
                 }
