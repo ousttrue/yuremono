@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace StrandCloth
 {
-    public class SpringClothSystem : MonoBehaviour
+    public class StrandClothSystem : MonoBehaviour
     {
         [SerializeField, Range(0, 1)]
         public float Stiffness = 0.01f;
@@ -32,6 +32,8 @@ namespace StrandCloth
             public string Name;
             public ConnectionType Connection;
             public List<Transform> _roots = new List<Transform>();
+            [Range(0.001f, 0.5f)]
+            public float _defaultStrandRaius = 0.05f;
         }
 
         [SerializeField]
@@ -45,9 +47,6 @@ namespace StrandCloth
 
         List<ClothConstraint> _constraints = new List<ClothConstraint>();
 
-        [Range(0.001f, 0.5f)]
-        public float _defaultStrandRaius = 0.01f;
-
         public void Start()
         {
             var strands = new List<Strand>();
@@ -56,7 +55,7 @@ namespace StrandCloth
                 strands.Clear();
                 foreach (var root in g._roots)
                 {
-                    strands.Add(new Strand(root, _defaultStrandRaius));
+                    strands.Add(new Strand(root, g._defaultStrandRaius));
                 }
 
                 if (g.Connection == ConnectionType.Cloth || g.Connection == ConnectionType.ClothLoop)

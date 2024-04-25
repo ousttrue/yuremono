@@ -6,7 +6,7 @@ namespace StrandCloth
 {
 	public class RandomWind : MonoBehaviour
 	{
-		private SpringClothSystem springBones;
+		private StrandClothSystem springBones;
 
 		private bool isChecked = true;
 
@@ -16,7 +16,7 @@ namespace StrandCloth
 		// Use this for initialization
 		void Start()
 		{
-			springBones = GetComponent<SpringClothSystem>();
+			springBones = GetComponent<StrandClothSystem>();
 		}
 
 		// Update is called once per frame

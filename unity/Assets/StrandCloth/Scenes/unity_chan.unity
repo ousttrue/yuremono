@@ -203,6 +203,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Radius: 0.186
+  Tail: {fileID: 0}
 --- !u!4 &166700852
 Transform:
   m_ObjectHideFlags: 0
@@ -318,10 +319,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 1178464233}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &340060508
 GameObject:
   m_ObjectHideFlags: 0
@@ -579,6 +576,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b20cfe8979e5be744b4de7d24aaa090a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _stiffnessForce: 0.01
+  _dragForce: 0.4
+  _springForce: {x: 0, y: -0.05, z: 0}
+  _colliders: []
   springBones:
   - {fileID: 328170732}
   - {fileID: 907708549}
@@ -614,10 +615,14 @@ MonoBehaviour:
   Stiffness: 0.01
   DragRatio: 0.4
   ExternalForce: {x: 0, y: -0.1, z: 0}
-  _roots:
-  - {fileID: 1628520935}
+  _groups:
+  - Name: 
+    Connection: 0
+    _roots:
+    - {fileID: 1628520935}
+    _defaultStrandRaius: 0.05
   _colliders: []
-  Hookean: 1000
+  Cloth: 0
 --- !u!114 &442000726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -630,7 +635,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd6872bfbacb474469e1262b50cabd4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Power: 10
+  Power: 1
 --- !u!114 &442000727
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -714,10 +719,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 1173412328}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &555380326
 GameObject:
   m_ObjectHideFlags: 0
@@ -978,10 +979,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 1463303614}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &1013343246 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100148, guid: 40046bae76ac54bffb59f14f47d9ba1b, type: 3}
@@ -1006,10 +1003,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 1487126604}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &1016660597
 GameObject:
   m_ObjectHideFlags: 0
@@ -1252,10 +1245,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 299828822}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &1272158420
 GameObject:
   m_ObjectHideFlags: 0
@@ -1325,10 +1314,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 1796683668}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &1463303613
 GameObject:
   m_ObjectHideFlags: 0
@@ -1641,10 +1626,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _child: {fileID: 340060509}
   _radius: 0.05
-  _stiffnessForce: 0.01
-  _dragForce: 0.4
-  _springForce: {x: 0, y: -0.05, z: 0}
-  _colliders: []
 --- !u!1 &2100168149
 GameObject:
   m_ObjectHideFlags: 0
