@@ -102,7 +102,7 @@ namespace StrandCloth
                     p.AddStiffnessForce(Time.deltaTime, Stiffness);
                     p.AddForce(stepForce);
                     var newPos = p.ApplyVerlet(DragRatio);
-                    newPos = p.Collision(newPos, _colliders, p.Constraint);
+                    newPos = p.Collision(newPos, _colliders);
                     p.ApplyRotationFromPosition(newPos);
                 }
             }
@@ -119,6 +119,8 @@ namespace StrandCloth
                     p.AddStiffnessForce(Time.deltaTime, Stiffness);
                     // 重力や風
                     p.AddForce(ExternalForce);
+                    // 長さを戻す力
+                    p.AddStrandConstraint();
                 }
             }
 
@@ -155,7 +157,7 @@ namespace StrandCloth
                 var keys = posMap.Keys.ToArray();
                 foreach (var p in keys)
                 {
-                    posMap[p] = p.Collision(posMap[p], _colliders, p.Constraint);
+                    posMap[p] = p.Collision(posMap[p], _colliders);
                 }
             }
 

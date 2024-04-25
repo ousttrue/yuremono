@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 
 namespace StrandCloth
@@ -87,7 +88,8 @@ namespace StrandCloth
                 return restPosition;
             }
             var newPos = _runtime.Verlet(dragRatio, _force);
-            return _Constraint(newPos, transform.parent.position, _init.SpringLength);
+            // return _Constraint(newPos, transform.parent.position, _init.SpringLength);
+            return newPos;
         }
 
         public void ApplyRotationFromPosition(Vector3 newPos)
@@ -96,41 +98,59 @@ namespace StrandCloth
             {
                 return;
             }
-            var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
-            _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, newPos);
             _force = Vector3.zero;
 
             // 親の回転として結果を適用する(位置から回転を作る)
+            var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
             var r = CalcRotation(restRotation, _init.BoneAxis, newPos - transform.parent.position);
             transform.parent.rotation = r;
+
+            _runtime = new ParticleRuntimeState(_runtime.CurrentPosition, transform.position);
         }
 
-        public Vector3 Collision(Vector3 newPos, IReadOnlyList<ParticleCollider> colliders, Func<Vector3, Vector3> constraint)
+        public Vector3 Collision(Vector3 newPos, IReadOnlyList<ParticleCollider> colliders)
         {
-            return _Collision(newPos, _init, colliders, constraint);
+            return _Collision(newPos, _init, colliders);
         }
 
-        public static Vector3 _Collision(Vector3 p, in ParticleInitState _init, IReadOnlyList<ParticleCollider> colliders, Func<Vector3, Vector3> constraint)
+        public static Vector3 _Collision(Vector3 p, in ParticleInitState _init, IReadOnlyList<ParticleCollider> colliders)
         {
             foreach (var c in colliders)
             {
                 if (c != null && c.TryCollide(p, _init.Radius, out var resolved))
                 {
-                    p = constraint(resolved);
+                    p = resolved;
                 }
             }
             return p;
         }
 
-        //長さを元に戻す
-        public Vector3 Constraint(Vector3 to)
-        {
-            return _Constraint(to, transform.parent.position, _init.SpringLength);
-        }
+        // //長さを元に戻す
+        // public Vector3 Constraint(Vector3 to)
+        // {
+        //     return _Constraint(to, transform.parent.position, _init.SpringLength);
+        // }
 
-        public static Vector3 _Constraint(Vector3 to, Vector3 from, float len)
+        // public static Vector3 _Constraint(Vector3 to, Vector3 from, float len)
+        // {
+        //     return from + (to - from).normalized * len;
+        // }
+
+        Vector3 from;
+        Vector3 to;
+
+        public void AddStrandConstraint()
         {
-            return from + (to - from).normalized * len;
+            if (Mass == 0)
+            {
+                return;
+            }
+
+            var target = transform.parent.position + (_runtime.CurrentPosition - transform.parent.position).normalized * _init.SpringLength;
+            AddForce(_runtime.CurrentPosition - target);
+
+            from = transform.position;
+            to = target;
         }
 
         //回転を適用；
@@ -148,6 +168,9 @@ namespace StrandCloth
                 Gizmos.DrawLine(transform.parent.position, transform.position);
             }
             Gizmos.DrawWireSphere(transform.position, SphereRadius);
+
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(from, to);
         }
     }
 }
