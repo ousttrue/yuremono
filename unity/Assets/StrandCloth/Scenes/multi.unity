@@ -1512,10 +1512,10 @@ MonoBehaviour:
     - {fileID: 1032072053}
     - {fileID: 699106956}
     - {fileID: 1867755509}
+    _defaultStrandRaius: 0.05
   _colliders:
   - {fileID: 1032092048}
   Cloth: 1
-  _defaultStrandRaius: 0.01
 --- !u!136 &1505150221
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1897,14 +1897,15 @@ MonoBehaviour:
     _roots:
     - {fileID: 576902598}
     - {fileID: 824933599}
+    _defaultStrandRaius: 0.05
   - Name: up
     Connection: 0
     _roots:
     - {fileID: 2081626074}
+    _defaultStrandRaius: 0.05
   _colliders:
   - {fileID: 1032092048}
   Cloth: 1
-  _defaultStrandRaius: 0.01
 --- !u!1 &1968015336
 GameObject:
   m_ObjectHideFlags: 0
@@ -1976,5 +1977,5 @@ SceneRoots:
   - {fileID: 366794439}
   - {fileID: 616739175}
   - {fileID: 1881548757}
-  - {fileID: 1032092049}
   - {fileID: 1505150224}
+  - {fileID: 1032092049}

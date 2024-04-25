@@ -44,6 +44,8 @@ namespace StrandCloth
         public List<ParticleCollider> _colliders = new List<ParticleCollider>();
 
         public bool Cloth = false;
+        [Range(0.0f, 2.0f)]
+        public float _clothFactor = 1.0f;
 
         List<ClothConstraint> _constraints = new List<ClothConstraint>();
 
@@ -110,7 +112,9 @@ namespace StrandCloth
 
         void PhaseSolver()
         {
+            //
             // Force を積算する
+            //
             foreach (var spring in _strands)
             {
                 foreach (var p in spring.Particles)
@@ -119,19 +123,21 @@ namespace StrandCloth
                     p.AddStiffnessForce(Time.deltaTime, Stiffness);
                     // 重力や風
                     p.AddForce(ExternalForce);
-                    // 長さを戻す力
-                    p.AddStrandConstraint();
                 }
             }
 
             if (Cloth)
             {
+                // ばね拘束
                 foreach (var c in _constraints)
                 {
-                    c.ResolveConstraint(1.0f);
+                    c.ResolveConstraint(_clothFactor);
                 }
             }
 
+            //
+            // 位置仮決め
+            //
             var posMap = new Dictionary<StrandParticle, Vector3>();
             foreach (var s in _strands)
             {
@@ -142,6 +148,9 @@ namespace StrandCloth
                 }
             }
 
+            //
+            // 衝突解決
+            //
             if (_constraints.Count > 0 && Cloth)
             {
                 foreach (var collider in _colliders)
@@ -161,6 +170,9 @@ namespace StrandCloth
                 }
             }
 
+            //
+            // 位置から回転を確定させる(親から子に再帰的に実行すること)
+            //
             foreach (var (p, newPos) in posMap)
             {
                 p.ApplyRotationFromPosition(newPos);

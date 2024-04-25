@@ -25,6 +25,27 @@ namespace StrandCloth
             _force += f;
         }
 
+        int _clothForceNum;
+        Vector3 _clothForce;
+        public void AddClothForce(Vector3 f)
+        {
+            ++_clothForceNum;
+            _clothForce += f;
+        }
+
+        public Vector3 CurrentForce
+        {
+            get
+            {
+                var f = _force;
+                if (_clothForceNum > 0)
+                {
+                    f += _clothForce / _clothForceNum;
+                }
+                return f;
+            }
+        }
+
         /// <summary>
         /// 初期化時に固定される不変の情報
         /// </summary>
@@ -87,7 +108,7 @@ namespace StrandCloth
                 var restPosition = transform.parent.position + restRotation * _init.LocalPosition;
                 return restPosition;
             }
-            var newPos = _runtime.Verlet(dragRatio, _force);
+            var newPos = _runtime.Verlet(dragRatio, CurrentForce);
             // return _Constraint(newPos, transform.parent.position, _init.SpringLength);
             return newPos;
         }
@@ -99,6 +120,8 @@ namespace StrandCloth
                 return;
             }
             _force = Vector3.zero;
+            _clothForceNum = 0;
+            _clothForce = Vector3.zero;
 
             // 親の回転として結果を適用する(位置から回転を作る)
             var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;

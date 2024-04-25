@@ -35,8 +35,8 @@ namespace StrandCloth
             // return (_p0, _p1, dx);
 
             // Debug.Log($"{p0.transform} <=> {p1.transform} = {f}");
-            _p0.AddForce(dx);
-            _p1.AddForce(-dx);
+            _p0.AddClothForce(dx);
+            _p1.AddClothForce(-dx);
         }
 
         public void DrawGizmo()

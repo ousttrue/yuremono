@@ -100,12 +100,11 @@ namespace StrandCloth
             return true;
         }
 
-        public void ResolveConstraint(float hookean)
+        public void ResolveConstraint(float factor)
         {
-            // 1 だと暴れた
-            _ab.Resolve(0.3f);
-            _ac.Resolve(0.3f);
-            _bd.Resolve(0.3f);
+            _ab.Resolve(factor);
+            // _ac.Resolve(factor);
+            // _bd.Resolve(factor);
         }
 
         public void DrawGizmo()
