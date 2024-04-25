@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace SpringCloth
+namespace StrandCloth
 {
     public class SpringClothSystem : MonoBehaviour
     {
@@ -19,9 +19,25 @@ namespace SpringCloth
         [SerializeField]
         public Vector3 ExternalForce = new Vector3(0, -0.001f, 0);
 
-        public List<Transform> _roots = new List<Transform>();
+        public enum ConnectionType
+        {
+            Cloth,
+            ClothLoop,
+            Strand,
+        }
 
-        List<Strand> _springs = new List<Strand>();
+        [Serializable]
+        public class StrandGroup
+        {
+            public string Name;
+            public ConnectionType Connection;
+            public List<Transform> _roots = new List<Transform>();
+        }
+
+        [SerializeField]
+        public List<StrandGroup> _groups = new List<StrandGroup>();
+
+        List<Strand> _strands = new List<Strand>();
 
         public List<ParticleCollider> _colliders = new List<ParticleCollider>();
 
@@ -34,21 +50,40 @@ namespace SpringCloth
 
         public void Start()
         {
-            foreach (var root in _roots)
+            var strands = new List<Strand>();
+            foreach (var g in _groups)
             {
-                _springs.Add(new Strand(root, _defaultStrandRaius));
-            }
-
-            Debug.Log($"Springs: {_springs.Count}");
-
-            for (int i = 1; i < _springs.Count; ++i)
-            {
-                var s0 = _springs[i - 1];
-                var s1 = _springs[i];
-                for (int j = 1; j < s0.Particles.Count && j < s1.Particles.Count; ++j)
+                strands.Clear();
+                foreach (var root in g._roots)
                 {
-                    _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
+                    strands.Add(new Strand(root, _defaultStrandRaius));
                 }
+
+                if (g.Connection == ConnectionType.Cloth || g.Connection == ConnectionType.ClothLoop)
+                {
+                    for (int i = 1; i < strands.Count; ++i)
+                    {
+                        var s0 = strands[i - 1];
+                        var s1 = strands[i];
+                        for (int j = 1; j < s0.Particles.Count && j < s1.Particles.Count; ++j)
+                        {
+                            _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
+                        }
+                    }
+                    if (strands.Count >= 3)
+                    {
+                        if (g.Connection == ConnectionType.ClothLoop)
+                        {
+                            var s0 = strands.Last();
+                            var s1 = strands.First();
+                            for (int j = 1; j < s0.Particles.Count && j < s1.Particles.Count; ++j)
+                            {
+                                _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
+                            }
+                        }
+                    }
+                }
+                _strands.AddRange(strands);
             }
         }
 
@@ -61,7 +96,7 @@ namespace SpringCloth
         void EachSolver()
         {
             var stepForce = ExternalForce;
-            foreach (var spring in _springs)
+            foreach (var spring in _strands)
             {
                 foreach (var p in spring.Particles)
                 {
@@ -77,7 +112,7 @@ namespace SpringCloth
         void PhaseSolver()
         {
             // Force を積算する
-            foreach (var spring in _springs)
+            foreach (var spring in _strands)
             {
                 foreach (var p in spring.Particles)
                 {
@@ -97,7 +132,7 @@ namespace SpringCloth
             }
 
             var posMap = new Dictionary<StrandParticle, Vector3>();
-            foreach (var s in _springs)
+            foreach (var s in _strands)
             {
                 foreach (var p in s.Particles)
                 {

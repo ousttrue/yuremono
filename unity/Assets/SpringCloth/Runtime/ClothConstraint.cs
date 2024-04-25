@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SpringCloth
+namespace StrandCloth
 {
     /// <summary>
     /// ４つの質点を参照する。

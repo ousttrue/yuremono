@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
-namespace SpringCloth
+namespace StrandCloth
 {
     public class Strand
     {

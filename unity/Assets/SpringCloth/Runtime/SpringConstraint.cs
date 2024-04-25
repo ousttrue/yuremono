@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace SpringCloth
+namespace StrandCloth
 {
     public class SpringConstraint
     {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SpringCloth
+namespace StrandCloth
 {
     [DisallowMultipleComponent]
     public class StrandParticle : MonoBehaviour
@@ -82,7 +82,7 @@ namespace SpringCloth
         {
             if (Mass == 0)
             {
-                var restRotation = transform.parent.parent.rotation * _init.ParentLocalRotation;
+                var restRotation = (transform.parent.parent ? transform.parent.parent.rotation : Quaternion.identity) * _init.ParentLocalRotation;
                 var restPosition = transform.parent.position + restRotation * _init.LocalPosition;
                 return restPosition;
             }

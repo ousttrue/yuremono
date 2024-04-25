@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SpringCloth
+namespace StrandCloth
 {
     [SerializeField]
     public struct ParticleRuntimeState

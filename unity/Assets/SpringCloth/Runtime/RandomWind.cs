@@ -2,7 +2,7 @@
 using System.Collections;
 
 
-namespace SpringCloth
+namespace StrandCloth
 {
 	public class RandomWind : MonoBehaviour
 	{

@@ -1,7 +1,7 @@
 using UnityEngine;
 
 
-namespace SpringCloth
+namespace StrandCloth
 {
     public class ParticleCollider : MonoBehaviour
     {
