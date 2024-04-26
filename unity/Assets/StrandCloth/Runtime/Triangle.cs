@@ -27,7 +27,7 @@ namespace StrandCloth
         }
     }
 
-    struct Triangle
+    public struct Triangle
     {
         public Plane Plane;
         public Vector3[] Points;

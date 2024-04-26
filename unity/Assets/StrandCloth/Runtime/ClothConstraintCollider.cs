@@ -33,14 +33,16 @@ namespace StrandCloth
 
         CapsuleInfo? _capsule;
 
-        Triangle _triangle;
+        Triangle _triangle0;
+        float _trinagle0Collision;
+        Triangle _triangle1;
+        float _triangle1Collision;
 
         /// <summary>
-        /// 三角形 a-b-(c+d/2) と衝突 
-        ///   
-        ///d /\ c
-        /// /  \
-        ///a----b
+        /// 三角形と衝突 
+        /// d-c
+        /// |/|
+        /// a-b
         /// </summary>
         /// <param name="collider"></param>
         /// <param name="posMap"></param>
@@ -52,30 +54,48 @@ namespace StrandCloth
             var b = posMap[_b];
             var c = posMap[_c];
             var d = posMap[_d];
-            // Collide(collider, posMap, a, b, (c + d) * 0.5f);
-            if (!Collide(collider, posMap, a, b, c))
+
+            _triangle0 = new Triangle(a, b, c);
+            _trinagle0Collision -= 0.1f;
+            if (_trinagle0Collision < 0)
             {
-                Collide(collider, posMap, c, d, a);
+                _trinagle0Collision = 0;
+            }
+
+            _triangle1 = new Triangle(c, d, a);
+            _triangle1Collision -= 0.1f;
+            if (_triangle1Collision < 0)
+            {
+                _triangle1Collision = 0;
+            }
+
+            if (Collide(collider, posMap, _triangle0))
+            {
+                _trinagle0Collision = 1.0f;
+                return;
+            }
+            if (Collide(collider, posMap, _triangle1))
+            {
+                _triangle1Collision = 1.0f;
+                return;
             }
         }
 
-        public bool Collide(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap, in Vector3 a, in Vector3 b, in Vector3 c)
+        public bool Collide(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap, in Triangle triangle)
         {
-            _triangle = new Triangle(a, b, c);
-
             if (collider.Tail != null)
             {
-                return ColliderCapsule(collider, posMap);
+                return ColliderCapsule(collider, posMap, triangle);
             }
             else
             {
-                return ColliderSphere(collider.transform.position, collider.Radius, posMap);
+                return ColliderSphere(collider.transform.position, collider.Radius, posMap, triangle);
             }
         }
 
-        bool ColliderCapsule(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap)
+        bool ColliderCapsule(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap, in Triangle triangle)
         {
-            var capsule = new CapsuleInfo(_triangle, collider);
+            var capsule = new CapsuleInfo(triangle, collider);
             if (!capsule.Intersected)
             {
                 _capsule = default;
@@ -85,7 +105,7 @@ namespace StrandCloth
 
             if (capsule.Triangle.TryIntersectSegment(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, out var intersection))
             {
-                return ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t0), collider.Radius, posMap);
+                return ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t0), collider.Radius, posMap, triangle);
                 // var cap = Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t1);
                 // var tri = _triangle.Plane.ClosestPointOnPlane(cap);
                 // var distance = _triangle.Plane.GetDistanceToPoint(cap);
@@ -98,16 +118,16 @@ namespace StrandCloth
         }
 
 
-        bool ColliderSphere(in Vector3 collider, float radius, Dictionary<StrandParticle, Vector3> posMap)
+        bool ColliderSphere(in Vector3 collider, float radius, Dictionary<StrandParticle, Vector3> posMap, in Triangle triangle)
         {
-            var p = _triangle.Plane.ClosestPointOnPlane(collider);
+            var p = triangle.Plane.ClosestPointOnPlane(collider);
             var distance = Vector3.Distance(p, collider);
             if (distance > radius)
             {
                 return false;
             }
 
-            if (!_triangle.IsSameSide(p))
+            if (!triangle.IsSameSide(p))
             {
                 return false;
             }
@@ -147,10 +167,18 @@ namespace StrandCloth
             // _bd.Resolve(factor);
         }
 
+        static Color getColor(float n)
+        {
+            return new Color(Mathf.Lerp(0.3f, 1.0f, n), 0.3f, 0.3f);
+        }
+
         public void DrawGizmo()
         {
-            Gizmos.color = Color.green;
-            _triangle.DrawGizmo();
+            Gizmos.color = getColor(_trinagle0Collision);
+            _triangle0.DrawGizmo();
+
+            Gizmos.color = getColor(_triangle1Collision);
+            _triangle1.DrawGizmo();
 
             if (_capsule.HasValue)
             {
