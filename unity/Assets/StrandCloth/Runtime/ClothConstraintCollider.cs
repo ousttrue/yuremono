@@ -9,7 +9,7 @@ namespace StrandCloth
     /// |  |
     /// a--b
     /// </summary>
-    public class ClothConstraint
+    public class ClothConstraintCollider
     {
         StrandParticle _a;
         StrandParticle _b;
@@ -20,7 +20,7 @@ namespace StrandCloth
         SpringConstraint _ac;
         SpringConstraint _bd;
 
-        public ClothConstraint(StrandParticle a, StrandParticle b, StrandParticle c, StrandParticle d)
+        public ClothConstraintCollider(StrandParticle a, StrandParticle b, StrandParticle c, StrandParticle d)
         {
             _a = a;
             _b = b;
@@ -36,7 +36,11 @@ namespace StrandCloth
         Triangle _triangle;
 
         /// <summary>
-        /// 三角形 a-b-(d+c/2) と衝突 
+        /// 三角形 a-b-(c+d/2) と衝突 
+        ///   c
+        ///  /\
+        /// /  \
+        ///a----b
         /// </summary>
         /// <param name="collider"></param>
         /// <param name="posMap"></param>
@@ -69,9 +73,9 @@ namespace StrandCloth
             }
             _capsule = capsule;
 
-            if (capsule.Triangle.TryIntersect(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, out var t))
+            if (capsule.Triangle.TryIntersectSegment(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, out var intersection))
             {
-                ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, t), collider.Radius, posMap);
+                ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t0), collider.Radius, posMap);
             }
         }
 
@@ -85,7 +89,7 @@ namespace StrandCloth
                 return false;
             }
 
-            if (!_triangle.SameSide(p))
+            if (!_triangle.IsSameSide(p))
             {
                 return false;
             }

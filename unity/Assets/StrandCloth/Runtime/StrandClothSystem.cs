@@ -47,7 +47,7 @@ namespace StrandCloth
         [Range(0.0f, 2.0f)]
         public float _clothFactor = 1.0f;
 
-        List<ClothConstraint> _constraints = new List<ClothConstraint>();
+        List<ClothConstraintCollider> _constraints = new List<ClothConstraintCollider>();
 
         public void Start()
         {
@@ -68,7 +68,7 @@ namespace StrandCloth
                         var s1 = strands[i];
                         for (int j = 1; j < s0.Particles.Count && j < s1.Particles.Count; ++j)
                         {
-                            _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
+                            _constraints.Add(new ClothConstraintCollider(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
                         }
                     }
                     if (strands.Count >= 3)
@@ -79,7 +79,7 @@ namespace StrandCloth
                             var s1 = strands.First();
                             for (int j = 1; j < s0.Particles.Count && j < s1.Particles.Count; ++j)
                             {
-                                _constraints.Add(new ClothConstraint(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
+                                _constraints.Add(new ClothConstraintCollider(s0.Particles[j], s1.Particles[j], s1.Particles[j - 1], s0.Particles[j - 1]));
                             }
                         }
                     }
