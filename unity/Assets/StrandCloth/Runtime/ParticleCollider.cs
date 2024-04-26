@@ -14,6 +14,8 @@ namespace StrandCloth
 
         public float CapsuleLength => Tail == null ? 0 : Vector3.Distance(Tail.position, transform.position);
 
+        public bool SolidGizmo = false;
+
         public void Reset()
         {
             if (transform.childCount > 0)
@@ -117,6 +119,12 @@ namespace StrandCloth
 
         public void OnDrawGizmos()
         {
+            if (SolidGizmo)
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawSphere(transform.position, Radius);
+            }
+
             Gizmos.color = Color.yellow;
             if (transform.parent)
             {

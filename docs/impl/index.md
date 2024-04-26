@@ -1,31 +1,23 @@
-# 実装案
+# 実装案(Strand Cloth)
 
-## spring and cloth
+Unity で実装中。
 
-spring と cloth をまとめて、質点シミュレーションの枠組みで動かす。
+https://github.com/ousttrue/yuremono/tree/master/unity
 
-名称も `SpringBone` でなくて `particle dynamics` などの質点感のある名前に。
+[rocketjump(始祖)](/docs/springbone/rocketjump) をベースに発展させたものです。
 
-## bone or vertex
+オリジナルの参考にした strand(紐) から名前を頂いて、
+`StrandCloth` と名付けました。
+StrandCloth では、`Strand`, `CLoth`, `Spring` を次の意味で使います。
 
-最初は、bone の方で実装する。
+- Strand: 今迄 SpringBone と呼んでいた紐状のゆれもの
+- Cloth: Strand を横に連結したゆれもの
+- Spring: Cloth を横に連結するときの拘束(フック(ばね)の法則)
 
-- SpringBone の機能拡張が当初の目的
-  - SpringBone間のすり抜けを改善したい
-- vertex へのパラメーター付与が煩雑(頂点カラー経由？)
-- glTF は三角形 mesh なので、四角格子を推測する必要がある
+- 質点: transform, bone, joint, particle...
 
-## springbone 改造
+## TODO:
 
-- 親から子への再帰をやめて並列処理できるようにする(おそらく挙動が変わる。末端の方が加速しやすいように減速などのパラメーターを調整するとよさそうな気がする)
-- stiffness を cloth の bend ロジックに起きかえてみる
-
-## collision
-
-質点と collider では質点側に詳細な形状がある方が、
-貫通防止になると思われる。
-
-### 四角collider
-
-- cloth の四角格子をそのまま collider にする
+- Center
+- Scale
 

@@ -61,14 +61,22 @@ const sidebars: SidebarsConfig = {
         'refrence/mass_spring_model',
       ]
     },
-    'impl/index',
-    // {
-    //   type: 'category',
-    //   label: '実装案',
-    //   items: [
-    //     'impl/index',
-    //   ]
-    // },
+
+    {
+      type: 'category',
+      label: '実装案(StrandCloth)',
+      link: { type: 'doc', id: 'impl/index' },
+      items: [
+        'impl/head_tail',
+        'impl/timedelta',
+        'impl/stiffness',
+        'impl/dragforce',
+        'impl/externalforce',
+        'impl/collision',
+        'impl/constraint_update',
+        'impl/cloth',
+      ],
+    },
   ],
 };
 
