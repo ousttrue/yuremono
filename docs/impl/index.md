@@ -8,9 +8,9 @@ https://github.com/ousttrue/yuremono/tree/master/unity
 
 オリジナルの参考にした strand(紐) から名前を頂いて、
 `StrandCloth` と名付けました。
-StrandCloth では、`Strand`, `CLoth`, `Spring` を次の意味で使います。
+StrandCloth では、`Strand`, `Cloth`, `Spring` を次の意味で使います。
 
-- Strand: 今迄 SpringBone と呼んでいた紐状のゆれもの
+- Strand: SpringBone と呼んでいた紐状のゆれもの
 - Cloth: Strand を横に連結したゆれもの
 - Spring: Cloth を横に連結するときの拘束(フック(ばね)の法則)
 

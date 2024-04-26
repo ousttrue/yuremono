@@ -37,8 +37,8 @@ namespace StrandCloth
 
         /// <summary>
         /// 三角形 a-b-(c+d/2) と衝突 
-        ///   c
-        ///  /\
+        ///   
+        ///d /\ c
         /// /  \
         ///a----b
         /// </summary>
@@ -50,32 +50,42 @@ namespace StrandCloth
 
             var a = posMap[_a];
             var b = posMap[_b];
-            var c = (posMap[_c] + posMap[_d]) * 0.5f;
+            var c = posMap[_c];
+            var d = posMap[_d];
+            // Collide(collider, posMap, a, b, (c + d) * 0.5f);
+            if (!Collide(collider, posMap, a, b, c))
+            {
+                Collide(collider, posMap, c, d, a);
+            }
+        }
+
+        public bool Collide(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap, in Vector3 a, in Vector3 b, in Vector3 c)
+        {
             _triangle = new Triangle(a, b, c);
 
             if (collider.Tail != null)
             {
-                ColliderCapsule(collider, posMap);
+                return ColliderCapsule(collider, posMap);
             }
             else
             {
-                ColliderSphere(collider.transform.position, collider.Radius, posMap);
+                return ColliderSphere(collider.transform.position, collider.Radius, posMap);
             }
         }
 
-        void ColliderCapsule(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap)
+        bool ColliderCapsule(ParticleCollider collider, Dictionary<StrandParticle, Vector3> posMap)
         {
             var capsule = new CapsuleInfo(_triangle, collider);
             if (!capsule.Intersected)
             {
                 _capsule = default;
-                return;
+                return false;
             }
             _capsule = capsule;
 
             if (capsule.Triangle.TryIntersectSegment(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, out var intersection))
             {
-                ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t0), collider.Radius, posMap);
+                return ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t0), collider.Radius, posMap);
                 // var cap = Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t1);
                 // var tri = _triangle.Plane.ClosestPointOnPlane(cap);
                 // var distance = _triangle.Plane.GetDistanceToPoint(cap);
@@ -83,6 +93,8 @@ namespace StrandCloth
 
                 // ResolveDelta(delta, posMap);
             }
+
+            return false;
         }
 
 

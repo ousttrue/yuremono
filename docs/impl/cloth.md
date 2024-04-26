@@ -35,14 +35,20 @@ a-b
 ## collision
 
 ```
-d o c
- / \
+d - c
+| \ |
 a---b
 ```
 
 :::tip
 
-abcd 4点があるときに、a b (c+d)2 の三角形一枚で実装しています。
+abcd 4点があるときに、`a b c`, `c d a` の2つ 
+
+:::
+
+:::danger
+
+当初の a b (c+d)/2 での実装は Collision が不安定でよろしくなかった。
 
 :::
 
