@@ -94,22 +94,6 @@ namespace StrandCloth
             PhaseSolver();
         }
 
-        void EachSolver()
-        {
-            var stepForce = ExternalForce;
-            foreach (var spring in _strands)
-            {
-                foreach (var p in spring.Particles)
-                {
-                    p.AddStiffnessForce(Time.deltaTime, Stiffness);
-                    p.AddForce(stepForce);
-                    var newPos = p.ApplyVerlet(DragRatio);
-                    newPos = p.Collision(newPos, _colliders);
-                    p.ApplyRotationFromPosition(newPos);
-                }
-            }
-        }
-
         void PhaseSolver()
         {
             //
@@ -141,10 +125,14 @@ namespace StrandCloth
             var posMap = new Dictionary<StrandParticle, Vector3>();
             foreach (var s in _strands)
             {
-                foreach (var p in s.Particles)
+                if (s.Particles.Count > 0)
                 {
-                    var newPos = p.ApplyVerlet(DragRatio);
-                    posMap.Add(p, newPos);
+                    var current = s.Particles[0].transform.parent.position;
+                    foreach (var p in s.Particles)
+                    {
+                        current = p.ApplyVerlet(DragRatio, current);
+                        posMap.Add(p, current);
+                    }
                 }
             }
 

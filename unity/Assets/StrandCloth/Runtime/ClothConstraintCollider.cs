@@ -150,14 +150,16 @@ namespace StrandCloth
             {
                 posMap[_b] = posMap[_b] + delta;
             }
-            // if (_c.Mass > 0)
-            // {
-            //     posMap[_c] = posMap[_c] + delta;
-            // }
-            // if (_d.Mass > 0)
-            // {
-            //     posMap[_d] = posMap[_d] + delta;
-            // }
+#if false
+            if (_c.Mass > 0)
+            {
+                posMap[_c] = posMap[_c] + delta;
+            }
+            if (_d.Mass > 0)
+            {
+                posMap[_d] = posMap[_d] + delta;
+            }
+#endif
         }
 
         public void ResolveConstraint(float factor)

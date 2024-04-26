@@ -14,7 +14,7 @@ tail の次の場所を verlet 積分や衝突判定から得ます。
 
 ## parent - self
 
-本実装では、 self の次の場所を verlet 積分や衝突判定から得ます。
+StrandCloth では、 self の次の場所を verlet 積分や衝突判定から得ます。
 確定した self の位置から `parent` の rotation を決定します。
 
 - Gizmo の描画が自然

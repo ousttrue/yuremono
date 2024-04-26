@@ -100,7 +100,7 @@ namespace StrandCloth
             return (restPosition - currTipPos) * stiffness;
         }
 
-        public Vector3 ApplyVerlet(float dragRatio)
+        public Vector3 ApplyVerlet(float dragRatio, in Vector3 parentPosition)
         {
             if (Mass == 0)
             {
@@ -109,8 +109,8 @@ namespace StrandCloth
                 return restPosition;
             }
             var newPos = _runtime.Verlet(dragRatio, CurrentForce);
-            // return _Constraint(newPos, transform.parent.position, _init.SpringLength);
-            return newPos;
+            return _Constraint(newPos, parentPosition, _init.SpringLength);
+            // return newPos;
         }
 
         public void ApplyRotationFromPosition(Vector3 newPos)
@@ -154,10 +154,10 @@ namespace StrandCloth
         //     return _Constraint(to, transform.parent.position, _init.SpringLength);
         // }
 
-        // public static Vector3 _Constraint(Vector3 to, Vector3 from, float len)
-        // {
-        //     return from + (to - from).normalized * len;
-        // }
+        public static Vector3 _Constraint(Vector3 to, Vector3 from, float len)
+        {
+            return from + (to - from).normalized * len;
+        }
 
         Vector3 from;
         Vector3 to;

@@ -234,5 +234,4 @@ namespace StrandCloth
             Gizmos.DrawLineStrip(Points, true);
         }
     }
-
 }

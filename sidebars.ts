@@ -72,6 +72,7 @@ const sidebars: SidebarsConfig = {
         'impl/stiffness',
         'impl/dragforce',
         'impl/externalforce',
+        'impl/verlet',
         'impl/collision',
         'impl/constraint_update',
         'impl/cloth',
