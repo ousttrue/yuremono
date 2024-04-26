@@ -76,6 +76,12 @@ namespace StrandCloth
             if (capsule.Triangle.TryIntersectSegment(capsule.MinOnPlaneClamp, capsule.MaxOnPlaneClamp, out var intersection))
             {
                 ColliderSphere(Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t0), collider.Radius, posMap);
+                // var cap = Vector3.Lerp(capsule.MinClamp, capsule.MaxClamp, intersection.t1);
+                // var tri = _triangle.Plane.ClosestPointOnPlane(cap);
+                // var distance = _triangle.Plane.GetDistanceToPoint(cap);
+                // var delta = (tri - cap).normalized * (collider.Radius - distance);
+
+                // ResolveDelta(delta, posMap);
             }
         }
 
@@ -94,14 +100,32 @@ namespace StrandCloth
                 return false;
             }
 
+
             // 4点の移動量
             var delta = (p - collider).normalized * (radius - distance);
-            // Debug.Log(delta);
-            posMap[_a] = posMap[_a] + delta;
-            posMap[_b] = posMap[_b] + delta;
-            posMap[_c] = posMap[_c] + delta;
-            posMap[_d] = posMap[_d] + delta;
+            ResolveDelta(delta, posMap);
             return true;
+        }
+
+        void ResolveDelta(in Vector3 delta, Dictionary<StrandParticle, Vector3> posMap)
+        {
+            // Debug.Log(delta);\
+            if (_a.Mass > 0)
+            {
+                posMap[_a] = posMap[_a] + delta;
+            }
+            if (_b.Mass > 0)
+            {
+                posMap[_b] = posMap[_b] + delta;
+            }
+            // if (_c.Mass > 0)
+            // {
+            //     posMap[_c] = posMap[_c] + delta;
+            // }
+            // if (_d.Mass > 0)
+            // {
+            //     posMap[_d] = posMap[_d] + delta;
+            // }
         }
 
         public void ResolveConstraint(float factor)
