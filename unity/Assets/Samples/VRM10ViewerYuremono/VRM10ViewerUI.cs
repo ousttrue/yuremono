@@ -25,6 +25,9 @@ namespace UniVRM10.VRM10Viewer
         Button m_pastePose = default;
 
         [SerializeField]
+        Button m_resetCloth = default;
+
+        [SerializeField]
         Toggle m_showBoxMan = default;
 
         [SerializeField]
@@ -315,6 +318,7 @@ namespace UniVRM10.VRM10Viewer
             m_openModel.onClick.AddListener(OnOpenModelClicked);
             m_openMotion.onClick.AddListener(OnOpenMotionClicked);
             m_pastePose.onClick.AddListener(OnPastePoseClicked);
+            m_resetCloth.onClick.AddListener(OnResetClothClicked);
 
             // load initial bvh
             if (m_motion != null)
@@ -458,6 +462,16 @@ namespace UniVRM10.VRM10Viewer
             }
         }
 
+        async void OnResetClothClicked()
+        {
+            if (m_loaded == null)
+            {
+                return;
+            }
+            var system = m_loaded.Instance.GetComponent<RotateParticle.RotateParticleSystem>();
+            system.ResetParticle();
+        }
+
         static IMaterialDescriptorGenerator GetVrmMaterialDescriptorGenerator(bool useUrp)
         {
             if (useUrp)
@@ -521,7 +535,7 @@ namespace UniVRM10.VRM10Viewer
 
                 var autoSetup = vrm10Instance.transform.gameObject.AddComponent<RotateParticle.HumanoidAutoSetup>();
                 autoSetup.Reset();
-                var system = autoSetup.GetComponent<RotateParticle.RotateParticleSystem>();
+                var system = vrm10Instance.GetComponent<RotateParticle.RotateParticleSystem>();
                 system.Initialize();
 
                 var instance = vrm10Instance.GetComponent<RuntimeGltfInstance>();

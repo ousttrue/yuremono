@@ -86,6 +86,25 @@ namespace RotateParticle
             }
         }
 
+        public void Reset(IReadOnlyList<Transform> transforms)
+        {
+            var root = Particles[0];
+            _ResetRecursive(transforms, root);
+        }
+
+        void _ResetRecursive(IReadOnlyList<Transform> transforms,
+            RotateParticle joint)
+        {
+            var t = transforms[joint.Init.Index];
+            t.localPosition = joint.Init.LocalPosition;
+            t.localRotation = joint.Init.LocalRotation;
+            joint.State.Apply(t.position, zeroVelocity: true);
+            for (int i = 0; i < joint.Children.Count; ++i)
+            {
+                _ResetRecursive(transforms, joint.Children[i]);
+            }
+        }
+
         public void Apply(IReadOnlyList<Transform> transforms, IReadOnlyList<Vector3> positions)
         {
             var root = Particles[0];

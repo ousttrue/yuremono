@@ -26,9 +26,16 @@ namespace RotateParticle
             Current = t.position;
         }
 
-        public void Apply(in Vector3 newPos)
+        public void Apply(in Vector3 newPos, bool zeroVelocity = false)
         {
-            Prev = Current;
+            if (zeroVelocity)
+            {
+                Prev = newPos;
+            }
+            else
+            {
+                Prev = Current;
+            }
             Current = newPos;
         }
     }

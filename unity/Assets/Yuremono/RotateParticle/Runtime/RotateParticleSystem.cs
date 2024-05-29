@@ -212,6 +212,18 @@ namespace RotateParticle
             }
         }
 
+        /// <summary>
+        /// すべての Particle を Init 状態にする。
+        /// Verlet の Prev を現在地に更新する(速度0)。
+        /// </summary>
+        public void ResetParticle()
+        {
+            foreach (var strand in _strands)
+            {
+                strand.Reset(_list._particleTransforms);
+            }
+        }
+
         public void Update()
         {
             if (Time.deltaTime == 0)
