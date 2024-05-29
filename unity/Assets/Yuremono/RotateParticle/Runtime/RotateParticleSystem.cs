@@ -230,7 +230,11 @@ namespace RotateParticle
             {
                 return;
             }
+            Process(Time.deltaTime);
+        }
 
+        public void Process(float deltaTime)
+        {
             using var profile = new ProfileSample("RotateParticle");
 
             using (new ProfileSample("UpdateRoot"))
@@ -252,7 +256,7 @@ namespace RotateParticle
                 // particle simulation
                 //
                 // verlet 積分
-                var sqDt = Time.deltaTime * Time.deltaTime;
+                var sqDt = deltaTime * deltaTime;
                 _list.BeginFrame(Env, sqDt, _restPositions);
                 foreach (var (spring, collision) in _clothRects)
                 {

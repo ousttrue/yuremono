@@ -25,7 +25,10 @@ namespace UniVRM10.VRM10Viewer
         Button m_pastePose = default;
 
         [SerializeField]
-        Button m_resetCloth = default;
+        Button m_resetStrandInit = default;
+
+        [SerializeField]
+        Button m_resetStrandPose = default;
 
         [SerializeField]
         Toggle m_showBoxMan = default;
@@ -254,6 +257,8 @@ namespace UniVRM10.VRM10Viewer
         }
 
         Loaded m_loaded;
+        RotateParticle.HumanoidPose m_init;
+        int m_springFrame = 0;
 
         static class ArgumentChecker
         {
@@ -310,6 +315,20 @@ namespace UniVRM10.VRM10Viewer
             }
         }
 
+        [SerializeField]
+        public int Iteration = 32;
+
+        Action<float> MakeSetPose()
+        {
+            var start = m_init;
+            var animator = m_loaded.Instance.GetComponent<Animator>();
+            var end = new RotateParticle.HumanoidPose(animator);
+            return (float t) =>
+            {
+                RotateParticle.HumanoidPose.ApplyLerp(animator, start, end, t);
+            };
+        }
+
         private void Start()
         {
             m_version.text = string.Format("VRMViewer {0}.{1}",
@@ -318,7 +337,8 @@ namespace UniVRM10.VRM10Viewer
             m_openModel.onClick.AddListener(OnOpenModelClicked);
             m_openMotion.onClick.AddListener(OnOpenMotionClicked);
             m_pastePose.onClick.AddListener(OnPastePoseClicked);
-            m_resetCloth.onClick.AddListener(OnResetClothClicked);
+            m_resetStrandInit.onClick.AddListener(OnResetStrandInitClicked);
+            m_resetStrandPose.onClick.AddListener(OnResetStrandPoseClicked);
 
             // load initial bvh
             if (m_motion != null)
@@ -382,8 +402,10 @@ namespace UniVRM10.VRM10Viewer
 
             if (m_loaded != null)
             {
-                // replace spring bone
-                // m_loaded.Runtime.
+                if (m_springFrame++ == 0)
+                {
+                    ResetStrandPose();
+                }
             }
         }
 
@@ -462,7 +484,7 @@ namespace UniVRM10.VRM10Viewer
             }
         }
 
-        async void OnResetClothClicked()
+        void OnResetStrandInitClicked()
         {
             if (m_loaded == null)
             {
@@ -470,6 +492,45 @@ namespace UniVRM10.VRM10Viewer
             }
             var system = m_loaded.Instance.GetComponent<RotateParticle.RotateParticleSystem>();
             system.ResetParticle();
+        }
+
+        void OnResetStrandPoseClicked()
+        {
+            if (m_loaded == null)
+            {
+                return;
+            }
+            ResetStrandPose();
+        }
+
+        void ResetStrandPose()
+        {
+            ResetStrandPose(MakeSetPose(), 32, 1.0f / 30, 60);
+        }
+
+        void ResetStrandPose(Action<float> setPose, int iteration, float timeDelta, int finish)
+        {
+            var system = m_loaded.Instance.GetComponent<RotateParticle.RotateParticleSystem>();
+
+            // init
+            setPose(0);
+            system.ResetParticle();
+
+            // lerp
+            var t = 0.0f;
+            var d = 1.0f / iteration;
+            for (int i = 0; i < iteration; ++i, t += d)
+            {
+                setPose(t);
+                system.Process(timeDelta);
+            }
+
+            // finish
+            setPose(1.0f);
+            for (int i = 0; i < finish; ++i)
+            {
+                system.Process(timeDelta);
+            }
         }
 
         static IMaterialDescriptorGenerator GetVrmMaterialDescriptorGenerator(bool useUrp)
@@ -542,6 +603,8 @@ namespace UniVRM10.VRM10Viewer
                 instance.ShowMeshes();
                 instance.EnableUpdateWhenOffscreen();
                 m_loaded = new Loaded(instance, m_target.transform);
+                m_init = new RotateParticle.HumanoidPose(vrm10Instance.GetComponent<Animator>());
+                m_springFrame = 0;
                 m_showBoxMan.isOn = false;
             }
             catch (Exception ex)
