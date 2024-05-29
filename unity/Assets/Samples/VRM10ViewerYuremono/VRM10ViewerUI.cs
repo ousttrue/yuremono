@@ -367,7 +367,7 @@ namespace UniVRM10.VRM10Viewer
             {
                 if (m_ui.IsTPose)
                 {
-                    m_loaded.Runtime.VrmAnimation = TPose;
+                    m_loaded.Runtime.VrmAnimation = null; //TPose;
                 }
                 else if (Motion != null)
                 {
@@ -512,11 +512,17 @@ namespace UniVRM10.VRM10Viewer
                     return;
                 }
 
+                //
+                // RotateParticle.HumanoidAutoSetup
+                //
+
                 // clear
                 vrm10Instance.SpringBone = new Vrm10InstanceSpringBone();
 
                 var autoSetup = vrm10Instance.transform.gameObject.AddComponent<RotateParticle.HumanoidAutoSetup>();
                 autoSetup.Reset();
+                var system = autoSetup.GetComponent<RotateParticle.RotateParticleSystem>();
+                system.Initialize();
 
                 var instance = vrm10Instance.GetComponent<RuntimeGltfInstance>();
                 instance.ShowMeshes();

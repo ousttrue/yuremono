@@ -23,6 +23,7 @@ namespace RotateParticle
         public float _clothFactor = 0.5f;
 
         // runtime
+        bool _initialized = false;
         List<Strand> _strands = new List<Strand>();
         public ParticleList _list = new();
         public List<(SpringConstraint, ClothRectCollision)> _clothRects = new();
@@ -172,8 +173,9 @@ namespace RotateParticle
             }
         }
 
-        public void Start()
+        public void Initialize()
         {
+            _initialized = true;
             foreach (var g in _strandGroups)
             {
                 if (g.Roots?.Count == 0)
@@ -199,6 +201,14 @@ namespace RotateParticle
             foreach (var (s, c) in _clothRects)
             {
                 c.InitializeColliderSide(_newPos, _colliderGroups);
+            }
+        }
+
+        void Start()
+        {
+            if (_initialized)
+            {
+                Initialize();
             }
         }
 
@@ -251,9 +261,12 @@ namespace RotateParticle
                 for (int i = 0; i < _colliderGroups.Count; ++i)
                 {
                     var g = _colliderGroups[i];
+
+
                     foreach (var (spring, rect) in _clothRects)
                     {
-                        // abcd 同じ CollisionMask
+                        using var prof = new ProfileSample("Collision: Cloth");
+                        // 頂点 abcd は同じ CollisionMask
                         if (_list._particles[rect._a].Init.CollisionMask.HasFlag((CollisionGroupMask)(i + 1)))
                         {
                             // cloth
@@ -263,28 +276,30 @@ namespace RotateParticle
 
                     for (int j = 0; j < _list._particles.Count; ++j)
                     {
-                        var particle = _list._particles[j];
-                        if (particle.Init.Mass == 0)
-                        {
-                            continue;
-                        }
-                        if (!particle.Init.CollisionMask.HasFlag((CollisionGroupMask)(i + 1)))
-                        {
-                            continue;
-                        }
+                        using var prof = new ProfileSample("Collision: Strand");
                         if (_clothUsedParticles.Contains(j))
                         {
                             // 布で処理された
                             continue;
                         }
 
-                        var p = _newPos.Get(j);
-                        foreach (var c in g.Colliders)
+                        var particle = _list._particles[j];
+                        if (particle.Init.Mass == 0)
                         {
-                            // strand
-                            if (c != null && c.TryCollide(p, particle.Init.Radius, out var resolved))
+                            continue;
+                        }
+
+                        // 紐の当たり判定
+                        if (particle.Init.CollisionMask.HasFlag((CollisionGroupMask)(i + 1)))
+                        {
+                            var p = _newPos.Get(j);
+                            foreach (var c in g.Colliders)
                             {
-                                _newPos.CollisionMove(particle.Init.Index, resolved, c.Radius);
+                                // strand
+                                if (c != null && c.TryCollide(p, particle.Init.Radius, out var resolved))
+                                {
+                                    _newPos.CollisionMove(particle.Init.Index, resolved, c.Radius);
+                                }
                             }
                         }
                     }

@@ -1,6 +1,3 @@
-// 三角形の法線方向に衝突解決する
-#define USE_NORMAL_DIR
-
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -25,13 +22,8 @@ namespace SphereTriangle
         TriangleCapsuleCollisionSolver _s0 = new();
         TriangleCapsuleCollisionSolver _s1 = new();
 
-        enum NormalSide
-        {
-            Positive,
-            Negative,
-        }
         // 各コライダーが初期姿勢で三角形ABCの法線の正か負のどちらにあるのかを記録する
-        Dictionary<SphereCapsuleCollider, NormalSide> _initialColliderNormalSide = new();
+        Dictionary<SphereCapsuleCollider, float> _initialColliderNormalSide = new();
 
         /// <summary>
         /// two triangles
@@ -68,15 +60,9 @@ namespace SphereTriangle
             {
                 foreach (var collider in g.Colliders)
                 {
-                    var dot = Vector3.Dot(t.Plane.normal, collider.transform.position);
-                    if (dot > 0)
-                    {
-                        _initialColliderNormalSide[collider] = NormalSide.Positive;
-                    }
-                    else
-                    {
-                        _initialColliderNormalSide[collider] = NormalSide.Negative;
-                    }
+                    var p = t.Plane.ClosestPointOnPlane(collider.transform.position);
+                    var dot = Vector3.Dot(t.Plane.normal, collider.transform.position - p);
+                    _initialColliderNormalSide[collider] = dot;
                 }
             }
         }
@@ -97,7 +83,7 @@ namespace SphereTriangle
 
         public void Collide(PositionList list, IReadOnlyCollection<SphereCapsuleCollider> colliders)
         {
-            using (new ProfileSample("CollidePrepare"))
+            using (new ProfileSample("Rect: Prepare"))
             {
                 _s0.BeginFrame();
                 _s1.BeginFrame();
@@ -127,36 +113,42 @@ namespace SphereTriangle
                 }
             }
 
-            var aabb = GetBounds(list);
-
-            foreach (var collider in colliders)
+            using (new ProfileSample("Rect: Collide"))
             {
-                if (!aabb.Intersects(collider.GetBounds()))
-                {
-                    continue;
-                }
+                var aabb = GetBounds(list);
 
-                if (TryCollide(_s0, collider, _triangle0, out var l0))
+                foreach (var collider in colliders)
                 {
-                    _trinagle0Collision = 1.0f;
-#if USE_NORMAL_DIR
-                    var d = _triangle0.Plane.GetDistanceToPoint(l0.Start);
-                    l0 = new LineSegment(l0.End + _triangle0.Plane.normal * d, l0.End);
-#endif
-                    list.CollisionMove(_a, l0, collider.Radius);
-                    list.CollisionMove(_b, l0, collider.Radius);
-                    list.CollisionMove(_c, l0, collider.Radius);
-                }
-                if (TryCollide(_s1, collider, _triangle1, out var l1))
-                {
-                    _triangle1Collision = 1.0f;
-#if USE_NORMAL_DIR
-                    var d = _triangle0.Plane.GetDistanceToPoint(l0.Start);
-                    l0 = new LineSegment(l0.End + _triangle0.Plane.normal * d, l0.End);
-#endif
-                    list.CollisionMove(_c, l1, collider.Radius);
-                    list.CollisionMove(_d, l1, collider.Radius);
-                    list.CollisionMove(_a, l1, collider.Radius);
+                    using (new ProfileSample("EaryOut"))
+                    {
+                        if (!aabb.Intersects(collider.GetBounds()))
+                        {
+                            continue;
+                        }
+
+                        var p = _triangle0.Plane.ClosestPointOnPlane(collider.transform.position);
+                        var dot = Vector3.Dot(_triangle0.Plane.normal, collider.transform.position - p);
+                        if (_initialColliderNormalSide[collider] * dot < 0)
+                        {
+                            // 片側
+                            continue;
+                        }
+                    }
+
+                    if (TryCollide(_s0, collider, _triangle0, out var l0))
+                    {
+                        _trinagle0Collision = 1.0f;
+                        list.CollisionMove(_a, l0, collider.Radius);
+                        list.CollisionMove(_b, l0, collider.Radius);
+                        list.CollisionMove(_c, l0, collider.Radius);
+                    }
+                    if (TryCollide(_s1, collider, _triangle1, out var l1))
+                    {
+                        _triangle1Collision = 1.0f;
+                        list.CollisionMove(_c, l1, collider.Radius);
+                        list.CollisionMove(_d, l1, collider.Radius);
+                        list.CollisionMove(_a, l1, collider.Radius);
+                    }
                 }
             }
         }

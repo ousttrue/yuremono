@@ -439,6 +439,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Radius: 0.181
   Tail: {fileID: 1499507829}
+  GizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   SolidGizmo: 0
 --- !u!4 &697358962
 Transform:
@@ -1293,10 +1294,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67a32b7c5e169f64daa6a8717d3de4f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _groups:
-  - Name: cloth
+  _strandGroups:
+  - Name: 
+    CollisionMask: 0
     Connection: 1
-    _roots:
+    Roots:
     - {fileID: 1890118283}
     - {fileID: 1620666996}
     - {fileID: 510828803}
@@ -1305,9 +1307,11 @@ MonoBehaviour:
     - {fileID: 1795237625}
     - {fileID: 1111855028}
     - {fileID: 1566314966}
-    _defaultStrandRaius: 0.05
-  _colliders:
-  - {fileID: 2045284902}
+    DefaultStrandRaius: 0
+  _colliderGroups:
+  - Name: 
+    Colliders:
+    - {fileID: 2045284902}
   Env:
     Center: {fileID: 0}
     Stiffness: 0.1
@@ -1632,6 +1636,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Radius: 0.201
   Tail: {fileID: 1068665244}
+  GizmoColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   SolidGizmo: 0
 --- !u!4 &2045284903
 Transform:
