@@ -125,16 +125,6 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
-    "com.unity.visualscripting": {
-      "version": "1.9.2",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.vrmc.gltf": {
       "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/UniGLTF#v0.121.0",
       "depth": 0,

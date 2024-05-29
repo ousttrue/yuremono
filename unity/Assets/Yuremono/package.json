@@ -1,0 +1,14 @@
+{
+    "name": "jp.ousttrue.yuremono",
+    "version": "0.1.0",
+    "displayName": "Yuremono",
+    "description": "Strand(SpringBone) and cloth for yuremono",
+    "unity": "2022.3",
+    "keywords": [],
+    "author": {
+        "name": "ousttrue",
+        "url": "https://ousttrue.github.io/yuremono/"
+    },
+    "dependencies": {},
+    "samples": []
+}
