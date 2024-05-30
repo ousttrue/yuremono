@@ -18,6 +18,9 @@ namespace RotateParticle
         // 現フレームの力積算
         public Vector3 Force = Vector3.zero;
 
+        // 直前で接触があった
+        public bool HasCollide = false;
+
         public RotateParticle(int index, RotateParticle parent, SimulationEnv env, Transform transform, float radius, float mass, CollisionGroupMask collisionMask)
         {
             Init = new ParticleInitState(index, transform, radius, mass, collisionMask);
@@ -25,20 +28,34 @@ namespace RotateParticle
             Parent = parent;
         }
 
-        public void BeginFrame(SimulationEnv env, float sqDt, in Vector3 rest)
+
+        public void BeginFrame(SimulationEnv env, FrameTime time, in Vector3 rest)
         {
             // integrate forces
             Force = Vector3.zero;
 
             // 曲げ
-            Force += (rest - State.Current) * env.Stiffness / sqDt;
+            if (HasCollide)
+            {
+                // 震え防止。ちょっとマイルドになるような気もする？
+                HasCollide = false;
+            }
+            else
+            {
+                // 1 で即時に元に戻る
+                Force += (rest - State.Current) * env.Stiffness / time.SqDt;
+            }
 
-            Force += (env.External / sqDt);
+            // 外力(sqDtで割るとピーキーすぎるのでこれでいいのでは？)
+            Force += env.External / time.DeltaTime;
         }
 
-        public Vector3 Verlet(SimulationEnv env, float sqDt)
+        public Vector3 Verlet(SimulationEnv env, FrameTime time)
         {
-            return State.Current + (State.Current - State.Prev) * (1 - env.DragForce) + Force * sqDt;
+            // 1 で即時停止
+            var drag = (State.Current - State.Prev) * (1 - env.DragForce);
+
+            return State.Current + drag + Force * time.SqDt;
         }
 
         /// <summary>

@@ -10,14 +10,15 @@ namespace RotateParticle
     [DisallowMultipleComponent]
     public class RotateParticleSystem : MonoBehaviour
     {
+        // TODO: param to _strandGroups
+        [SerializeField]
+        public SimulationEnv Env = new();
+
         [SerializeField]
         public List<StrandGroup> _strandGroups = new List<StrandGroup>();
 
         [SerializeField]
         public List<ColliderGroup> _colliderGroups = new();
-
-        [SerializeField]
-        public SimulationEnv Env = new();
 
         [Range(0, 1)]
         public float _clothFactor = 0.5f;
@@ -206,7 +207,7 @@ namespace RotateParticle
 
         void Start()
         {
-            if (_initialized)
+            if (!_initialized)
             {
                 Initialize();
             }
@@ -256,14 +257,14 @@ namespace RotateParticle
                 // particle simulation
                 //
                 // verlet 積分
-                var sqDt = deltaTime * deltaTime;
-                _list.BeginFrame(Env, sqDt, _restPositions);
+                var time = new FrameTime(deltaTime);
+                _list.BeginFrame(Env, time, _restPositions);
                 foreach (var (spring, collision) in _clothRects)
                 {
                     // cloth constraint
-                    spring.Resolve(sqDt, _clothFactor);
+                    spring.Resolve(time, _clothFactor);
                 }
-                _list.Verlet(Env, sqDt, _newPos.Init);
+                _list.Verlet(Env, time, _newPos.Init);
                 // 長さで拘束
                 foreach (var strand in _strands)
                 {
@@ -324,6 +325,13 @@ namespace RotateParticle
 
             using (new ProfileSample("Apply"))
             {
+                for (int i = 0; i < _newPos.CollisionCount.Length; ++i)
+                {
+                    if (_newPos.CollisionCount[i] > 0)
+                    {
+                        _list._particles[i].HasCollide = true;
+                    }
+                }
                 var result = _newPos.Resolve();
                 //
                 // apply result

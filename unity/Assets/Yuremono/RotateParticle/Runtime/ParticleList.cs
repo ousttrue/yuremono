@@ -56,7 +56,7 @@ namespace RotateParticle
             }
         }
 
-        public void BeginFrame(SimulationEnv env, float sqDt, IReadOnlyList<Vector3> restPositions)
+        public void BeginFrame(SimulationEnv env, FrameTime time, IReadOnlyList<Vector3> restPositions)
         {
             for (int i = 0; i < _particles.Count; ++i)
             {
@@ -67,18 +67,18 @@ namespace RotateParticle
                 }
 
                 var rest = restPositions[p.Init.Index];
-                p.BeginFrame(env, sqDt, rest);
+                p.BeginFrame(env, time, rest);
             }
         }
 
-        public void Verlet(SimulationEnv env, float sqDt, SphereTriangle.InitPosition initPos)
+        public void Verlet(SimulationEnv env, FrameTime time, SphereTriangle.InitPosition initPos)
         {
             for (int i = 0; i < _particles.Count; ++i)
             {
                 var p = _particles[i];
                 if (p.Init.Mass > 0)
                 {
-                    var newPos = p.Verlet(env, sqDt);
+                    var newPos = p.Verlet(env, time);
                     initPos(i, p.Init.Mass, newPos);
                 }
             }

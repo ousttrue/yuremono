@@ -1294,9 +1294,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67a32b7c5e169f64daa6a8717d3de4f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Env:
+    Center: {fileID: 0}
+    Stiffness: 0.1
+    DragForce: 0.607
+    External: {x: 0, y: -0.001, z: 0}
   _strandGroups:
   - Name: 
-    CollisionMask: 0
+    CollisionMask: 4294967295
     Connection: 1
     Roots:
     - {fileID: 1890118283}
@@ -1312,11 +1317,6 @@ MonoBehaviour:
   - Name: 
     Colliders:
     - {fileID: 2045284902}
-  Env:
-    Center: {fileID: 0}
-    Stiffness: 0.1
-    DragForce: 0.607
-    External: {x: 0, y: -0.001, z: 0}
   _clothFactor: 0.5
   _list:
     _particles: []

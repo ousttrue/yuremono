@@ -23,11 +23,11 @@ namespace RotateParticle
         ///  フックの法則
         /// </summary>
         /// <returns></returns>
-        public void Resolve(float sqDt, float hookean)
+        public void Resolve(FrameTime time, float hookean)
         {
             var d = Vector3.Distance(_p0.State.Current, _p1.State.Current);
             var f = (d - _rest) * hookean;
-            var dx = (_p1.State.Current - _p0.State.Current).normalized * f / sqDt;
+            var dx = (_p1.State.Current - _p0.State.Current).normalized * f / time.SqDt;
 
             _p0.Force += dx;
             _p1.Force -= dx;
