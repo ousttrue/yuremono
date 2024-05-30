@@ -38,11 +38,10 @@ namespace RotateParticle
             if (HasCollide)
             {
                 // 震え防止。ちょっとマイルドになるような気もする？
-                HasCollide = false;
             }
             else
             {
-                // 1 で即時に元に戻る
+                // Stiffness: 1 で即時に元に戻る
                 Force += (rest - State.Current) * env.Stiffness / time.SqDt;
             }
 
@@ -52,10 +51,20 @@ namespace RotateParticle
 
         public Vector3 Verlet(SimulationEnv env, FrameTime time)
         {
-            // 1 で即時停止
-            var drag = (State.Current - State.Prev) * (1 - env.DragForce);
+            var velocity = (State.Current - State.Prev);
+            if (HasCollide)
+            {
+                // 震え防止。ちょっとマイルドになるような気もする？
+                velocity = Vector3.zero;
+            }
+            else
+            {
+                // DragForce: 1 で即時停止
+                velocity *= (1 - env.DragForce);
+            }
 
-            return State.Current + drag + Force * time.SqDt;
+            HasCollide = false;
+            return State.Current + velocity + Force * time.SqDt;
         }
 
         /// <summary>
