@@ -391,7 +391,7 @@ namespace UniVRM10.VRM10Viewer
             {
                 if (m_ui.IsTPose)
                 {
-                    m_loaded.Runtime.VrmAnimation = null; //TPose;
+                    m_loaded.Runtime.VrmAnimation = TPose;
                 }
                 else if (Motion != null)
                 {
