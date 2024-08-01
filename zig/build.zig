@@ -19,25 +19,6 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .root_source_file = b.path(ENTRY_POINT),
         });
-
-        // create a build step which invokes the Emscripten linker
-        const emsdk = dep_sokol.builder.dependency("emsdk", .{});
-        const link_step = try sokol.emLinkStep(b, .{
-            .lib_main = lib,
-            .target = target,
-            .optimize = optimize,
-            .emsdk = emsdk,
-            .use_webgl2 = true,
-            .use_emmalloc = true,
-            .use_filesystem = false,
-            .shell_file_path = dep_sokol.path("src/sokol/web/shell.html").getPath(b),
-            .extra_args = &.{"-sUSE_OFFSET_CONVERTER=1"},
-        });
-        // ...and a special run step to start the web build output via 'emrun'
-        const run = sokol.emRunStep(b, .{ .name = "pacman", .emsdk = emsdk });
-        run.step.dependOn(&link_step.step);
-        b.step("run", "Run pacman").dependOn(&run.step);
-
         break :block lib;
     } else block: {
         const exe = b.addExecutable(.{
@@ -58,6 +39,29 @@ pub fn build(b: *std.Build) void {
     };
     compile.root_module.addImport("sokol", dep_sokol.module("sokol"));
     b.installArtifact(compile);
+
+    // link
+    if (target.result.isWasm()) {
+        // create a build step which invokes the Emscripten linker
+        const emsdk = dep_sokol.builder.dependency("emsdk", .{});
+        const link_step = try sokol.emLinkStep(b, .{
+            .lib_main = compile,
+            .target = target,
+            .optimize = optimize,
+            .emsdk = emsdk,
+            .use_webgl2 = true,
+            .use_emmalloc = true,
+            .use_filesystem = false,
+            .shell_file_path = dep_sokol.path("src/sokol/web/shell.html").getPath(b),
+            .extra_args = &.{
+                "-sTOTAL_MEMORY=200MB",
+                "-sUSE_OFFSET_CONVERTER=1",
+            },
+        });
+        const run = sokol.emRunStep(b, .{ .name = NAME, .emsdk = emsdk });
+        run.step.dependOn(&link_step.step);
+        b.step("run", "Run sample").dependOn(&run.step);
+    }
 
     const exe_unit_tests = b.addTest(.{
         .root_source_file = b.path("src/main.zig"),
