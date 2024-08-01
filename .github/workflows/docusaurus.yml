@@ -28,16 +28,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      # wasm
+      - uses: goto-bus-stop/setup-zig@v2
+      - name: build wasm
+        run: |
+          mkdir -p static/wasm
+          cd zig
+          zig build --summary all -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
+          cp zig-out/web/* ../static/wasm
+      # docusaurus
       - uses: actions/setup-node@v3
         with:
           node-version: 20
           cache: npm
-
       - name: Install dependencies
         run: npm install
       - name: Build website
         run: npm run build
-
+      # gh-pages
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
