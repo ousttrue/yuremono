@@ -15,7 +15,7 @@ const state = struct {
     var pip = sg.Pipeline{};
     var bind = sg.Bindings{};
     var elms = sokol.shape.ElementRange{};
-    var vs_params: shd.VsParams = undefined;
+    var draw_mode: f32 = 0;
     var rx: f32 = 0;
     var ry: f32 = 0;
 };
@@ -25,10 +25,11 @@ export fn init() void {
         .environment = sokol.glue.environment(),
         .logger = .{ .func = sokol.log.func },
     });
-    sokol.debugtext.setup(.{
-        .fonts = .{ sokol.debugtext.fontOric(), .{}, .{}, .{}, .{}, .{}, .{}, .{} },
+    var dtx_desc = sokol.debugtext.Desc{
         .logger = .{ .func = sokol.log.func },
-    });
+    };
+    dtx_desc.fonts[0] = sokol.debugtext.fontOric();
+    sokol.debugtext.setup(dtx_desc);
 
     // clear to black
     state.pass_action = .{ .colors = .{
@@ -146,7 +147,6 @@ export fn frame() void {
     const rxm = szmath.Mat4.rotate(state.rx, .{ .x = 1.0, .y = 0.0, .z = 0.0 });
     const rym = szmath.Mat4.rotate(state.ry, .{ .x = 0.0, .y = 1.0, .z = 0.0 });
     const model = rxm.mul(rym);
-    state.vs_params.mvp = model.mul(view_proj).m;
 
     // render the single shape
     sg.beginPass(.{
@@ -155,7 +155,10 @@ export fn frame() void {
     });
     sg.applyPipeline(state.pip);
     sg.applyBindings(state.bind);
-    sg.applyUniforms(.VS, shd.SLOT_vs_params, sg.asRange(&state.vs_params));
+    sg.applyUniforms(.VS, shd.SLOT_vs_params, sg.asRange(&.{
+        .draw_mode = state.draw_mode,
+        .mvp = model.mul(view_proj).m,
+    }));
     sg.draw(state.elms.base_element, state.elms.num_elements, 1);
 
     // render help text and finish frame
@@ -168,13 +171,13 @@ export fn input(ev: [*c]const sokol.app.Event) void {
     if (ev.*.type == .KEY_DOWN) {
         switch (ev.*.key_code) {
             ._1 => {
-                state.vs_params.draw_mode = 0.0;
+                state.draw_mode = 0.0;
             },
             ._2 => {
-                state.vs_params.draw_mode = 1.0;
+                state.draw_mode = 1.0;
             },
             ._3 => {
-                state.vs_params.draw_mode = 2.0;
+                state.draw_mode = 2.0;
             },
             else => {},
         }
