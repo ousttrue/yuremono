@@ -144,7 +144,7 @@ export fn frame() void {
         .{ .x = 0.0, .y = 0.0, .z = 0.0 },
         .{ .x = 0.0, .y = 1.0, .z = 0.0 },
     );
-    const view_proj = view.mul(proj);
+    const view_proj = proj.mul(view);
     const rxm = szmath.Mat4.rotate(state.rx, .{ .x = 1.0, .y = 0.0, .z = 0.0 });
     const rym = szmath.Mat4.rotate(state.ry, .{ .x = 0.0, .y = 1.0, .z = 0.0 });
     const model = rxm.mul(rym);
@@ -158,7 +158,7 @@ export fn frame() void {
     sg.applyBindings(state.bind);
     sg.applyUniforms(.VS, shd.SLOT_vs_params, sg.asRange(&.{
         .draw_mode = state.draw_mode,
-        .mvp = model.mul(view_proj).m,
+        .mvp = view_proj.mul(model).m,
     }));
     sg.draw(state.elms.base_element, state.elms.num_elements, 1);
 
