@@ -58,8 +58,8 @@ pub fn build(b: *std.Build) void {
             .extra_args = &.{
                 "-sTOTAL_MEMORY=500MB",
                 "-sUSE_OFFSET_CONVERTER=1",
-                "-sASSERTIONS",
-                "-g3",
+                // "-sASSERTIONS",
+                // "-g3",
             },
         });
         const run = sokol.emRunStep(b, .{ .name = NAME, .emsdk = emsdk });
