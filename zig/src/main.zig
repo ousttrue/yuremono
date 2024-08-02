@@ -19,6 +19,9 @@ const state = struct {
     var rx: f32 = 0;
     var ry: f32 = 0;
 };
+var dtx_desc = sokol.debugtext.Desc{
+    .logger = .{ .func = sokol.log.func },
+};
 
 var vertices = [1]sokol.shape.Vertex{.{}} ** (6 * 1024);
 var indices = [1]u16{0} ** (16 * 1024);
@@ -28,11 +31,8 @@ export fn init() void {
         .environment = sokol.glue.environment(),
         .logger = .{ .func = sokol.log.func },
     });
-    // var dtx_desc = sokol.debugtext.Desc{
-    //     .logger = .{ .func = sokol.log.func },
-    // };
-    // dtx_desc.fonts[0] = sokol.debugtext.fontOric();
-    // sokol.debugtext.setup(dtx_desc);
+    dtx_desc.fonts[0] = sokol.debugtext.fontOric();
+    sokol.debugtext.setup(dtx_desc);
 
     // clear to black
     state.pass_action = .{ .colors = .{
@@ -119,15 +119,15 @@ export fn init() void {
 
 export fn frame() void {
     // help text
-    // sokol.debugtext.canvas(sokol.app.widthf() * 0.5, sokol.app.heightf() * 0.5);
-    // sokol.debugtext.pos(0.5, 0.5);
-    // sokol.debugtext.puts(
-    //     \\press key to switch draw mode:
-    //     \\
-    //     \\  1: vertex normals
-    //     \\  2: texture coords
-    //     \\  3: vertex color
-    // );
+    sokol.debugtext.canvas(sokol.app.widthf() * 0.5, sokol.app.heightf() * 0.5);
+    sokol.debugtext.pos(0.5, 0.5);
+    sokol.debugtext.puts(
+        \\press key to switch draw mode:
+        \\
+        \\  1: vertex normals
+        \\  2: texture coords
+        \\  3: vertex color
+    );
 
     // build model-view-projection matrix
     const t = (sokol.app.frameDuration() * 60.0);
@@ -163,7 +163,7 @@ export fn frame() void {
     sg.draw(state.elms.base_element, state.elms.num_elements, 1);
 
     // render help text and finish frame
-    // sokol.debugtext.draw();
+    sokol.debugtext.draw();
     sg.endPass();
     sg.commit();
 }
