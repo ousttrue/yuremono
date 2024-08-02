@@ -20,6 +20,9 @@ const state = struct {
     var ry: f32 = 0;
 };
 
+var vertices = [1]sokol.shape.Vertex{.{}} ** (6 * 1024);
+var indices = [1]u16{0} ** (16 * 1024);
+
 export fn init() void {
     sg.setup(.{
         .environment = sokol.glue.environment(),
@@ -57,8 +60,6 @@ export fn init() void {
     state.pip = sg.makePipeline(pip_desc);
 
     // generate merged shape geometries
-    var vertices = [1]sokol.shape.Vertex{.{}} ** (6 * 1024);
-    var indices = [1]u16{0} ** (16 * 1024);
     var buf: sokol.shape.Buffer = .{};
     buf.vertices.buffer = sokol.shape.asRange(&vertices);
     buf.indices.buffer = sokol.shape.asRange(&indices);
