@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const sokol = @import("sokol");
 const NAME = "yuremono";
 const ENTRY_POINT = "src/main.zig";
