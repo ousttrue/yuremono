@@ -3,6 +3,14 @@ const builtin = @import("builtin");
 const sokol = @import("sokol");
 const NAME = "yuremono";
 const ENTRY_POINT = "src/main.zig";
+const EMCC_EXTRA_ARGS = [_][]const u8{
+    "-sTOTAL_MEMORY=500MB",
+    "-sUSE_OFFSET_CONVERTER=1",
+};
+const EMCC_EXTRA_ARGS_DEBUG = [_][]const u8{
+    "-sASSERTIONS",
+    "-g3",
+};
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -55,12 +63,10 @@ pub fn build(b: *std.Build) void {
             .use_emmalloc = true,
             .use_filesystem = false,
             .shell_file_path = dep_sokol.path("src/sokol/web/shell.html").getPath(b),
-            .extra_args = &.{
-                "-sTOTAL_MEMORY=500MB",
-                "-sUSE_OFFSET_CONVERTER=1",
-                // "-sASSERTIONS",
-                // "-g3",
-            },
+            .extra_args = if (optimize == .Debug)
+                &(EMCC_EXTRA_ARGS ++ EMCC_EXTRA_ARGS_DEBUG)
+            else
+                &EMCC_EXTRA_ARGS,
         });
         const run = sokol.emRunStep(b, .{ .name = NAME, .emsdk = emsdk });
         run.step.dependOn(&link_step.step);

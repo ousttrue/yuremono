@@ -169,6 +169,13 @@ namespace RotateParticle
                 }
             }
             {
+                if (TryAddGroupChildChild(CollisionGroupMask.Group01, "Skirt", animator, HumanBodyBones.Hips, new[] { "skirt", "ｽｶｰﾄ", "スカート" }, new string[]{}, StrandConnectionType.ClothLoop, false,
+                    out var g))
+                {
+                    system._strandGroups.Add(g);
+                }
+            }
+            {
                 if (TryAddGroup(CollisionGroupMask.Group02, "髪", animator, HumanBodyBones.Head, new[] { "髪", "hair" }, StrandConnectionType.Strand,
                     out var g))
                 {
