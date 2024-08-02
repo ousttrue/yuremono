@@ -7,9 +7,8 @@
 const std = @import("std");
 const sokol = @import("sokol");
 const sg = sokol.gfx;
-const dbgui = @import("dbgui");
 const shd = @import("main.glsl.zig");
-const szmath = @import("szmath");
+const szmath = @import("math.zig");
 
 const state = struct {
     var pass_action = sg.PassAction{};
@@ -30,7 +29,6 @@ export fn init() void {
         .fonts = .{ sokol.debugtext.fontOric(), .{}, .{}, .{}, .{}, .{}, .{}, .{} },
         .logger = .{ .func = sokol.log.func },
     });
-    dbgui.setup(sokol.app.sampleCount());
 
     // clear to black
     state.pass_action = .{ .colors = .{
@@ -162,7 +160,6 @@ export fn frame() void {
 
     // render help text and finish frame
     sokol.debugtext.draw();
-    dbgui.draw();
     sg.endPass();
     sg.commit();
 }
@@ -182,11 +179,9 @@ export fn input(ev: [*c]const sokol.app.Event) void {
             else => {},
         }
     }
-    dbgui.event(ev);
 }
 
 export fn cleanup() void {
-    dbgui.shutdown();
     sg.shutdown();
 }
 
