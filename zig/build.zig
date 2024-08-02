@@ -58,6 +58,7 @@ pub fn build(b: *std.Build) void {
             .extra_args = &.{
                 "-sTOTAL_MEMORY=200MB",
                 "-sUSE_OFFSET_CONVERTER=1",
+                "-sASSERTIONS",
                 "-g3",
             },
         });
