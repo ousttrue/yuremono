@@ -47,7 +47,8 @@ pub fn build(b: *std.Build) void {
         break :block exe;
     };
     compile.root_module.addImport("sokol", dep_sokol.module("sokol"));
-    compile.step.dependOn(buildShader(b, target, "../sokol-tools-bin/bin/", "src/main.glsl"));
+
+    compile.step.dependOn(buildShader(b, target, "src/main.glsl"));
     b.installArtifact(compile);
 
     // link
@@ -84,24 +85,19 @@ pub fn build(b: *std.Build) void {
 }
 
 // a separate step to compile shaders, expects the shader compiler in ../sokol-tools-bin/
-// TODO: install sokol-shdc via package manager
 fn buildShader(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
-    comptime sokol_tools_bin_dir: []const u8,
     comptime shader: []const u8,
 ) *std.Build.Step {
-    const optional_shdc: ?[:0]const u8 = comptime switch (builtin.os.tag) {
+    const optional_shdc = comptime switch (builtin.os.tag) {
         .windows => "win32/sokol-shdc.exe",
         .linux => "linux/sokol-shdc",
         .macos => if (builtin.cpu.arch.isX86()) "osx/sokol-shdc" else "osx_arm64/sokol-shdc",
-        else => null,
+        else => @panic("unsupported host platform, skipping shader compiler step"),
     };
-    if (optional_shdc == null) {
-        std.log.warn("unsupported host platform, skipping shader compiler step", .{});
-        return;
-    }
-    const shdc_path = sokol_tools_bin_dir ++ optional_shdc.?;
+    const tools = b.dependency("sokol-tools-bin", .{});
+    const shdc_path = tools.path(b.pathJoin(&.{ "bin", optional_shdc })).getPath(b);
     const glsl = if (target.result.isDarwin()) "glsl410" else "glsl430";
     const slang = glsl ++ ":metal_macos:hlsl5:glsl300es:wgsl";
     return &b.addSystemCommand(&.{

@@ -33,7 +33,6 @@ jobs:
       - name: build wasm
         run: |
           mkdir -p static/wasm
-          git clone https://github.com/floooh/sokol-tools-bin.git
           cd zig
           zig build --summary all -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
           cp zig-out/web/* ../static/wasm
