@@ -26,5 +26,5 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 // };
 
 export default function Home() {
-  return <Redirect to={useBaseUrl('doc1')} />;
+  return <Redirect to={useBaseUrl('docs/')} />;
 }
