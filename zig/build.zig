@@ -1,6 +1,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const sokol = @import("sokol");
+const emsdk_zig = @import("emsdk-zig");
+
 const NAME = "yuremono";
 const ENTRY_POINT = "src/main.zig";
 const EMCC_EXTRA_ARGS = [_][]const u8{
@@ -16,7 +18,7 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const dep_sokol = b.dependency("sokol", .{
+    const sokol_dep = b.dependency("sokol", .{
         .target = target,
         .optimize = optimize,
     });
@@ -46,31 +48,48 @@ pub fn build(b: *std.Build) void {
 
         break :block exe;
     };
-    compile.root_module.addImport("sokol", dep_sokol.module("sokol"));
+    compile.root_module.addImport("sokol", sokol_dep.module("sokol"));
 
     compile.step.dependOn(buildShader(b, target, "src/main.glsl"));
     b.installArtifact(compile);
 
     // link
     if (target.result.isWasm()) {
+        const emsdk_zig_dep = b.dependency("emsdk-zig", .{});
+        const emsdk_dep = emsdk_zig_dep.builder.dependency("emsdk", .{});
         // create a build step which invokes the Emscripten linker
-        const emsdk = dep_sokol.builder.dependency("emsdk", .{});
-        const link_step = try sokol.emLinkStep(b, .{
+        const link = try emsdk_zig.emLinkCommand(b, emsdk_dep, .{
             .lib_main = compile,
             .target = target,
             .optimize = optimize,
-            .emsdk = emsdk,
             .use_webgl2 = true,
             .use_emmalloc = true,
-            .use_filesystem = false,
-            .shell_file_path = dep_sokol.path("src/sokol/web/shell.html").getPath(b),
-            .extra_args = if (optimize == .Debug)
+            .use_filesystem = true,
+            .shell_file_path = sokol_dep.path("src/sokol/web/shell.html").getPath(b),
+            .release_use_closure = false,
+            .extra_before = if (optimize == .Debug)
                 &(EMCC_EXTRA_ARGS ++ EMCC_EXTRA_ARGS_DEBUG)
             else
                 &EMCC_EXTRA_ARGS,
         });
-        const run = sokol.emRunStep(b, .{ .name = NAME, .emsdk = emsdk });
-        run.step.dependOn(&link_step.step);
+
+        link.addArg("-o");
+        const out_file = link.addOutputFileArg(b.fmt("{s}.html", .{compile.name}));
+
+        const install = b.addInstallDirectory(.{
+            .source_dir = out_file.dirname(),
+            .install_dir = .{ .prefix = void{} },
+            .install_subdir = "web",
+        });
+        b.getInstallStep().dependOn(&install.step);
+
+        const emsdk_incl_path = emsdk_dep.path(
+            "upstream/emscripten/cache/sysroot/include",
+        );
+        compile.addSystemIncludePath(emsdk_incl_path);
+
+        const run = sokol.emRunStep(b, .{ .name = NAME, .emsdk = emsdk_dep });
+        run.step.dependOn(&install.step);
         b.step("run", "Run sample").dependOn(&run.step);
     }
 
