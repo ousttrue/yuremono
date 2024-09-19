@@ -1,7 +1,9 @@
 import React from 'react';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Layout from '@theme/Layout';
-import Link from '@docusaurus/Link';
+// import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+// import Layout from '@theme/Layout';
+// import Link from '@docusaurus/Link';
+import { Redirect } from '@docusaurus/router';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 
 // export default function Home() {
 //   const { siteConfig } = useDocusaurusContext();

@@ -1,6 +1,6 @@
 # zig + wasm 版
 
-[wasm](/wasm/yuremono.html)
+<a href="/yuremono/wasm/yuremono.html">wasm</a>
 
 - 再帰的に位置と方向を決定するロジックを含むため Joint 並列にできない。一瞬伸びることを許容すればJoint並列にできる。 framerate が維持できていれば微細な伸びは目立たないと思われるので、検証する。
 
