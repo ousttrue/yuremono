@@ -5,7 +5,7 @@ using System.Threading;
 using UniGLTF;
 using UnityEngine;
 using UnityEngine.UI;
-using VRMShaders;
+
 
 namespace UniVRM10.VRM10Viewer
 {
